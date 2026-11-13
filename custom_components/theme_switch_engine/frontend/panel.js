@@ -839,19 +839,19 @@ class ThemeSwitchEnginePanel extends HTMLElement {
           <select class="cond-weather-entity" data-cidx="${idx}">
             <option value="" ${!cond.entity_id ? 'selected' : ''}>${this._t('weather_global_default')}</option>
             ${weatherEntities.map(eid => {
-              const name = allStates[eid]?.attributes?.friendly_name || eid;
-              return `<option value="${this._escapeHtml(eid)}" ${cond.entity_id === eid ? 'selected' : ''}>${this._escapeHtml(name)} (${this._escapeHtml(eid)})</option>`;
-            }).join('')}
+        const name = allStates[eid]?.attributes?.friendly_name || eid;
+        return `<option value="${this._escapeHtml(eid)}" ${cond.entity_id === eid ? 'selected' : ''}>${this._escapeHtml(name)} (${this._escapeHtml(eid)})</option>`;
+      }).join('')}
           </select>
         </div>
         <div class="sub-field-group">
           <label class="field-label">${this._t('weather_states_label')}</label>
           <select class="cond-weather-val" data-cidx="${idx}">
             ${candidates.map(st => {
-              const tKey = WEATHER_KEY_MAP[st];
-              const label = tKey ? `${this._t(tKey)} (${st})` : st;
-              return `<option value="${this._escapeHtml(st)}" ${selectVal === st ? 'selected' : ''}>${this._escapeHtml(label)}</option>`;
-            }).join('')}
+        const tKey = WEATHER_KEY_MAP[st];
+        const label = tKey ? `${this._t(tKey)} (${st})` : st;
+        return `<option value="${this._escapeHtml(st)}" ${selectVal === st ? 'selected' : ''}>${this._escapeHtml(label)}</option>`;
+      }).join('')}
             <option value="__custom__" ${selectVal === '__custom__' ? 'selected' : ''}>${this._t('weather_custom_state_option')}</option>
           </select>
         </div>
@@ -902,9 +902,9 @@ class ThemeSwitchEnginePanel extends HTMLElement {
           <label class="field-label">${this._t('weekdays_label')}</label>
           <div class="pill-grid">
             ${WEEKDAY_KEYS.map(day => {
-              const active = selectedDays.includes(day);
-              return `<button type="button" class="cond-pill cond-day-pill ${active ? 'active' : ''}" data-cidx="${idx}" data-val="${day}">${this._t('day_' + day)}</button>`;
-            }).join('')}
+        const active = selectedDays.includes(day);
+        return `<button type="button" class="cond-pill cond-day-pill ${active ? 'active' : ''}" data-cidx="${idx}" data-val="${day}">${this._t('day_' + day)}</button>`;
+      }).join('')}
           </div>
         </div>
       `;
@@ -961,9 +961,9 @@ class ThemeSwitchEnginePanel extends HTMLElement {
       return `
         <datalist id="tseEntitiesList_${idx}">
           ${entityIds.map(eid => {
-            const fname = allStates[eid]?.attributes?.friendly_name || '';
-            return `<option value="${this._escapeHtml(eid)}">${this._escapeHtml(fname ? `${fname} (${eid})` : eid)}</option>`;
-          }).join('')}
+        const fname = allStates[eid]?.attributes?.friendly_name || '';
+        return `<option value="${this._escapeHtml(eid)}">${this._escapeHtml(fname ? `${fname} (${eid})` : eid)}</option>`;
+      }).join('')}
         </datalist>
         <div class="sub-field-group">
           <label class="field-label">${this._t('entity_label')}</label>
@@ -974,10 +974,10 @@ class ThemeSwitchEnginePanel extends HTMLElement {
           <label class="field-label">${this._t('entity_state_label')}</label>
           <select class="cond-entity-state-select" data-cidx="${idx}">
             ${candidates.map(st => {
-              const isCurr = stObj && String(stObj.state) === st;
-              const label = isCurr ? `${st} (${this._t('entity_current_hint')})` : st;
-              return `<option value="${this._escapeHtml(st)}" ${selectVal === st ? 'selected' : ''}>${this._escapeHtml(label)}</option>`;
-            }).join('')}
+        const isCurr = stObj && String(stObj.state) === st;
+        const label = isCurr ? `${st} (${this._t('entity_current_hint')})` : st;
+        return `<option value="${this._escapeHtml(st)}" ${selectVal === st ? 'selected' : ''}>${this._escapeHtml(label)}</option>`;
+      }).join('')}
             <option value="__custom__" ${selectVal === '__custom__' ? 'selected' : ''}>${this._t('entity_custom_state_option')}</option>
           </select>
         </div>
@@ -1372,17 +1372,17 @@ class ThemeSwitchEnginePanel extends HTMLElement {
           <tbody>
             ${rules.length === 0 ? `<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--secondary-text-color,#64748b);">${this._t('no_rules')}</td></tr>` : ''}
             ${rules.map((r, idx) => {
-              const condStr = (r.conditions || []).map(c => this._formatConditionSummary(c)).join(', ') || this._t('always_active');
-              const tLight = r.theme_light || r.theme_day;
-              const tDark = r.theme_dark || r.theme_night;
-              const tMobLight = r.theme_mobile_light || r.theme_mobile_day;
-              const tMobDark = r.theme_mobile_dark || r.theme_mobile_night;
-              const deskTheme = r.theme || (tLight || tDark ? `${tLight || '-'} / ${tDark || '-'}` : this._t('standard_theme'));
-              const mobTheme = r.theme_mobile || (tMobLight || tMobDark ? `${tMobLight || '-'} / ${tMobDark || '-'}` : this._t('same_as_desktop'));
-              const fxBadge = (r.effect && r.effect !== 'none') ? `<span title="${this._escapeHtml(r.effect)}" style="margin-left:5px;font-size:12px;">✨</span>` : '';
-              const sndBadge = (r.sound_file && r.sound_file !== 'none') ? `<span title="${this._escapeHtml(r.sound_file)}" style="margin-left:3px;font-size:12px;">🔊</span>` : '';
+      const condStr = (r.conditions || []).map(c => this._formatConditionSummary(c)).join(', ') || this._t('always_active');
+      const tLight = r.theme_light || r.theme_day;
+      const tDark = r.theme_dark || r.theme_night;
+      const tMobLight = r.theme_mobile_light || r.theme_mobile_day;
+      const tMobDark = r.theme_mobile_dark || r.theme_mobile_night;
+      const deskTheme = r.theme || (tLight || tDark ? `${tLight || '-'} / ${tDark || '-'}` : this._t('standard_theme'));
+      const mobTheme = r.theme_mobile || (tMobLight || tMobDark ? `${tMobLight || '-'} / ${tMobDark || '-'}` : this._t('same_as_desktop'));
+      const fxBadge = (r.effect && r.effect !== 'none') ? `<span title="${this._escapeHtml(r.effect)}" style="margin-left:5px;font-size:12px;">✨</span>` : '';
+      const sndBadge = (r.sound_file && r.sound_file !== 'none') ? `<span title="${this._escapeHtml(r.sound_file)}" style="margin-left:3px;font-size:12px;">🔊</span>` : '';
 
-              return `
+      return `
                 <tr>
                   <td>
                     <label class="switch-toggle">
@@ -1408,7 +1408,7 @@ class ThemeSwitchEnginePanel extends HTMLElement {
                   </td>
                 </tr>
               `;
-            }).join('')}
+    }).join('')}
           </tbody>
         </table>
 
