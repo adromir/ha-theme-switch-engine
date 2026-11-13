@@ -48,6 +48,7 @@ console.log(`Creating GitHub Release ${version} for ${pkg.name}...`);
 
 const payload = JSON.stringify({
   tag_name: version,
+  target_commitish: 'main',
   name: `Theme Switch Engine ${version}`,
   body: releaseBody,
   draft: false,
