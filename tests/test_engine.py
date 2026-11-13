@@ -37,9 +37,16 @@ def _install_ha_stubs() -> None:
     def callback(fn):
         return fn
 
+    class ConfigFlow:
+        def __init_subclass__(cls, **kwargs: Any) -> None:
+            pass
+
     config_entries_mod.ConfigEntry = MagicMock
-    config_entries_mod.ConfigFlow = MagicMock
+    config_entries_mod.ConfigFlow = ConfigFlow
     config_entries_mod.OptionsFlow = MagicMock
+    data_entry_flow_mod = types.ModuleType("homeassistant.data_entry_flow")
+    data_entry_flow_mod.FlowResult = dict
+    sys.modules["homeassistant.data_entry_flow"] = data_entry_flow_mod
     event_mod.async_track_state_change_event = MagicMock
     event_mod.async_track_time_interval = MagicMock
     storage_mod.Store = MagicMock
@@ -233,6 +240,28 @@ class TestThemeSwitchEngine(unittest.TestCase):
         self.assertEqual(theme_desktop_fallback, "Vision Glass")
         self.assertEqual(theme_mobile_fallback, "Vision Glass")
 
+    def test_imports_and_light_dark_constants(self):
+        import json
+        import custom_components.theme_switch_engine.config_flow  # noqa: F401
+        from custom_components.theme_switch_engine.const import (
+            MODES,
+            MODE_FORCE_LIGHT,
+            MODE_FORCE_DARK,
+        )
+        self.assertIn(MODE_FORCE_LIGHT, MODES)
+        self.assertIn(MODE_FORCE_DARK, MODES)
+        self.assertNotIn("Force Day", MODES)
+        self.assertNotIn("Force Night", MODES)
+
+        base = ROOT / "custom_components" / "theme_switch_engine"
+        en_json = json.loads((base / "translations" / "en.json").read_text(encoding="utf-8"))
+        de_json = json.loads((base / "translations" / "de.json").read_text(encoding="utf-8"))
+        id_json = json.loads((base / "translations" / "id.json").read_text(encoding="utf-8"))
+        strings_json = json.loads((base / "strings.json").read_text(encoding="utf-8"))
+
+        for lang_json in (de_json, id_json, strings_json):
+            self.assertEqual(set(en_json["options"]["step"]["init"]["data"].keys()), set(lang_json["options"]["step"]["init"]["data"].keys()))
+            self.assertEqual(set(en_json["config"]["step"]["user"]["data"].keys()), set(lang_json["config"]["step"]["user"]["data"].keys()))
 
 
 if __name__ == "__main__":

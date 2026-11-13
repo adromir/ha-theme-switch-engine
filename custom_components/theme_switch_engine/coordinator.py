@@ -15,8 +15,12 @@ from homeassistant.helpers.event import (
 from homeassistant.helpers.storage import Store
 
 from .const import (
+    CONF_DEFAULT_THEME_DARK,
     CONF_DEFAULT_THEME_DAY,
+    CONF_DEFAULT_THEME_LIGHT,
+    CONF_DEFAULT_THEME_MOBILE_DARK,
     CONF_DEFAULT_THEME_MOBILE_DAY,
+    CONF_DEFAULT_THEME_MOBILE_LIGHT,
     CONF_DEFAULT_THEME_MOBILE_NIGHT,
     CONF_DEFAULT_THEME_NIGHT,
     CONF_RULES,
@@ -27,15 +31,17 @@ from .const import (
     CONF_WEATHER_ENTITY,
     DEFAULT_SHOW_SIDEBAR,
     DEFAULT_SUN_ELEVATION_THRESHOLD,
-    DEFAULT_THEME_DAY,
-    DEFAULT_THEME_MOBILE_DAY,
-    DEFAULT_THEME_MOBILE_NIGHT,
-    DEFAULT_THEME_NIGHT,
+    DEFAULT_THEME_DARK,
+    DEFAULT_THEME_LIGHT,
+    DEFAULT_THEME_MOBILE_DARK,
+    DEFAULT_THEME_MOBILE_LIGHT,
     DEFAULT_TRANSITION_DURATION,
     DEFAULT_TRANSITION_ENABLED,
     DOMAIN,
     MODE_AUTO,
+    MODE_FORCE_DARK,
     MODE_FORCE_DAY,
+    MODE_FORCE_LIGHT,
     MODE_FORCE_NIGHT,
     MODE_PAUSED,
     MODES,
@@ -67,11 +73,12 @@ class ThemeSwitchCoordinator:
         self.active_rule_id: str | None = None
         self.active_rule_name: str = "Initializing"
         self.active_priority: int = 0
-        self.day_night_variant: str = "day"
+        self.day_night_variant: str = "light"
         self.matched_conditions: list[str] = []
         self.last_switch: str | None = None
         self.preview_active: bool = False
         self._preview_task: asyncio.Task | None = None
+        self._entity_unsub: CALLBACK_TYPE | None = None
 
     async def async_setup(self) -> None:
         """Load stored config, register event hooks and perform initial evaluation."""
@@ -82,7 +89,12 @@ class ThemeSwitchCoordinator:
             self._config = self._build_default_config()
             await self._store.async_save(self._config)
 
-        self.mode = self._config.get("mode", MODE_AUTO)
+        raw_mode = self._config.get("mode", MODE_AUTO)
+        if raw_mode == MODE_FORCE_DAY:
+            raw_mode = MODE_FORCE_LIGHT
+        elif raw_mode == MODE_FORCE_NIGHT:
+            raw_mode = MODE_FORCE_DARK
+        self.mode = raw_mode
 
         # 1. Listen for Sun state changes
         self._unsub_listeners.append(
@@ -91,25 +103,10 @@ class ThemeSwitchCoordinator:
             )
         )
 
-        # 2. Listen for Weather changes if configured
-        w_entity = self.weather_entity
-        if w_entity:
-            self._unsub_listeners.append(
-                async_track_state_change_event(
-                    self.hass, [w_entity], self._async_handle_state_change
-                )
-            )
+        # 2. Listen for Weather and rule-referenced entities
+        self._refresh_entity_listeners()
 
-        # 3. Track custom entities referenced in rules
-        entity_ids = self._get_referenced_entities()
-        if entity_ids:
-            self._unsub_listeners.append(
-                async_track_state_change_event(
-                    self.hass, list(entity_ids), self._async_handle_state_change
-                )
-            )
-
-        # 4. Periodic time check (every 60 seconds)
+        # 3. Periodic time check (every 60 seconds)
         self._unsub_listeners.append(
             async_track_time_interval(
                 self.hass, self._async_handle_interval, timedelta(seconds=60)
@@ -119,14 +116,31 @@ class ThemeSwitchCoordinator:
         # Perform initial evaluation
         await self.async_evaluate()
 
+    def _refresh_entity_listeners(self) -> None:
+        """Subscribe to state changes for weather and rule-referenced entities."""
+        if self._entity_unsub:
+            self._entity_unsub()
+            self._entity_unsub = None
+
+        tracked: set[str] = set()
+        if self.weather_entity:
+            tracked.add(self.weather_entity)
+        tracked.update(self._get_referenced_entities())
+        tracked.discard("sun.sun")
+
+        if tracked:
+            self._entity_unsub = async_track_state_change_event(
+                self.hass, list(tracked), self._async_handle_state_change
+            )
+
     def _build_default_config(self) -> dict[str, Any]:
         """Generate default configuration template with starter rules."""
         return {
             "mode": MODE_AUTO,
-            CONF_DEFAULT_THEME_DAY: DEFAULT_THEME_DAY,
-            CONF_DEFAULT_THEME_NIGHT: DEFAULT_THEME_NIGHT,
-            CONF_DEFAULT_THEME_MOBILE_DAY: DEFAULT_THEME_MOBILE_DAY,
-            CONF_DEFAULT_THEME_MOBILE_NIGHT: DEFAULT_THEME_MOBILE_NIGHT,
+            CONF_DEFAULT_THEME_LIGHT: DEFAULT_THEME_LIGHT,
+            CONF_DEFAULT_THEME_DARK: DEFAULT_THEME_DARK,
+            CONF_DEFAULT_THEME_MOBILE_LIGHT: DEFAULT_THEME_MOBILE_LIGHT,
+            CONF_DEFAULT_THEME_MOBILE_DARK: DEFAULT_THEME_MOBILE_DARK,
             CONF_TRANSITION_ENABLED: DEFAULT_TRANSITION_ENABLED,
             CONF_TRANSITION_DURATION: DEFAULT_TRANSITION_DURATION,
             CONF_SUN_ELEVATION_THRESHOLD: DEFAULT_SUN_ELEVATION_THRESHOLD,
@@ -135,32 +149,32 @@ class ThemeSwitchCoordinator:
             CONF_RULES: [
                 {
                     "id": "rule_christmas",
-                    "name": "Weihnachten (Festtage)",
+                    "name": "Holidays",
                     "priority": 100,
                     "enabled": False,
-                    "theme": "Vision Glass Dark",
+                    "theme": "default",
                     "conditions": [
                         {"type": "date_range", "start_date": "12-24", "end_date": "12-26"}
                     ],
                 },
                 {
                     "id": "rule_winter",
-                    "name": "Winter Saison",
+                    "name": "Winter Season",
                     "priority": 50,
                     "enabled": False,
-                    "theme_day": "Vision Glass Light",
-                    "theme_night": "Vision Glass Dark",
+                    "theme_light": "default",
+                    "theme_dark": "default",
                     "conditions": [
                         {"type": "season", "season": "winter"}
                     ],
                 },
                 {
                     "id": "rule_summer",
-                    "name": "Sommer Saison",
+                    "name": "Summer Season",
                     "priority": 40,
                     "enabled": False,
-                    "theme_day": "Vision Glass Light",
-                    "theme_night": "Vision Glass Dark",
+                    "theme_light": "default",
+                    "theme_dark": "default",
                     "conditions": [
                         {"type": "season", "season": "summer"}
                     ],
@@ -175,20 +189,40 @@ class ThemeSwitchCoordinator:
         return sorted(raw_rules, key=lambda r: int(r.get("priority", 0)), reverse=True)
 
     @property
+    def default_theme_light(self) -> str:
+        return self._config.get(CONF_DEFAULT_THEME_LIGHT) or self._config.get(CONF_DEFAULT_THEME_DAY, DEFAULT_THEME_LIGHT)
+
+    @property
     def default_theme_day(self) -> str:
-        return self._config.get(CONF_DEFAULT_THEME_DAY, DEFAULT_THEME_DAY)
+        return self.default_theme_light
+
+    @property
+    def default_theme_dark(self) -> str:
+        return self._config.get(CONF_DEFAULT_THEME_DARK) or self._config.get(CONF_DEFAULT_THEME_NIGHT, DEFAULT_THEME_DARK)
 
     @property
     def default_theme_night(self) -> str:
-        return self._config.get(CONF_DEFAULT_THEME_NIGHT, DEFAULT_THEME_NIGHT)
+        return self.default_theme_dark
+
+    @property
+    def default_theme_mobile_light(self) -> str:
+        return self._config.get(CONF_DEFAULT_THEME_MOBILE_LIGHT) or self._config.get(
+            CONF_DEFAULT_THEME_MOBILE_DAY, self.default_theme_light
+        )
 
     @property
     def default_theme_mobile_day(self) -> str:
-        return self._config.get(CONF_DEFAULT_THEME_MOBILE_DAY, self.default_theme_day)
+        return self.default_theme_mobile_light
+
+    @property
+    def default_theme_mobile_dark(self) -> str:
+        return self._config.get(CONF_DEFAULT_THEME_MOBILE_DARK) or self._config.get(
+            CONF_DEFAULT_THEME_MOBILE_NIGHT, self.default_theme_dark
+        )
 
     @property
     def default_theme_mobile_night(self) -> str:
-        return self._config.get(CONF_DEFAULT_THEME_MOBILE_NIGHT, self.default_theme_night)
+        return self.default_theme_mobile_dark
 
     @property
     def show_sidebar(self) -> bool:
@@ -232,6 +266,10 @@ class ThemeSwitchCoordinator:
 
     async def async_set_mode(self, new_mode: str) -> None:
         """Update operational mode and save."""
+        if new_mode == MODE_FORCE_DAY:
+            new_mode = MODE_FORCE_LIGHT
+        elif new_mode == MODE_FORCE_NIGHT:
+            new_mode = MODE_FORCE_DARK
         if new_mode not in MODES:
             raise ValueError(f"Invalid mode '{new_mode}'. Expected one of {MODES}")
         self.mode = new_mode
@@ -242,6 +280,16 @@ class ThemeSwitchCoordinator:
     async def async_update_config(self, new_config: dict[str, Any]) -> None:
         """Update and persist configuration."""
         self._config.update(new_config)
+        if "mode" in new_config:
+            m = new_config["mode"]
+            if m == MODE_FORCE_DAY:
+                m = MODE_FORCE_LIGHT
+            elif m == MODE_FORCE_NIGHT:
+                m = MODE_FORCE_DARK
+            if m in MODES:
+                self.mode = m
+                self._config["mode"] = m
+        self._refresh_entity_listeners()
         await self._store.async_save(self._config)
         await self.async_evaluate()
 
@@ -276,7 +324,7 @@ class ThemeSwitchCoordinator:
         target_rule_id: str | None = None
         target_rule_name: str = "Fallback"
         target_priority: int = 0
-        target_variant: str = "day" if day else "night"
+        target_variant: str = "light" if day else "dark"
         matched_conds: list[str] = []
 
         if self.mode == MODE_PAUSED:
@@ -284,18 +332,18 @@ class ThemeSwitchCoordinator:
             self._notify_listeners()
             return
 
-        if self.mode == MODE_FORCE_DAY:
-            target_theme_desktop = self.default_theme_day
-            target_theme_mobile = self.default_theme_mobile_day
-            target_rule_name = "Manuell: Tag erzwungen"
-            target_variant = "day"
-            matched_conds = ["mode=force_day"]
-        elif self.mode == MODE_FORCE_NIGHT:
-            target_theme_desktop = self.default_theme_night
-            target_theme_mobile = self.default_theme_mobile_night
-            target_rule_name = "Manuell: Nacht erzwungen"
-            target_variant = "night"
-            matched_conds = ["mode=force_night"]
+        if self.mode in (MODE_FORCE_LIGHT, MODE_FORCE_DAY):
+            target_theme_desktop = self.default_theme_light
+            target_theme_mobile = self.default_theme_mobile_light
+            target_rule_name = "Force Light"
+            target_variant = "light"
+            matched_conds = ["mode=force_light"]
+        elif self.mode in (MODE_FORCE_DARK, MODE_FORCE_NIGHT):
+            target_theme_desktop = self.default_theme_dark
+            target_theme_mobile = self.default_theme_mobile_dark
+            target_rule_name = "Force Dark"
+            target_variant = "dark"
+            matched_conds = ["mode=force_dark"]
         else:
             # MODE_AUTO: Evaluate rules top-down by priority
             for rule in self.rules:
@@ -312,41 +360,41 @@ class ThemeSwitchCoordinator:
 
                 if is_match:
                     target_rule_id = rule.get("id")
-                    target_rule_name = rule.get("name") or "Unbenannte Regel"
+                    target_rule_name = rule.get("name") or "Unnamed Rule"
                     target_priority = int(rule.get("priority", 0))
                     matched_conds = cond_names
 
-                    theme_day = rule.get("theme_day")
-                    theme_night = rule.get("theme_night")
+                    theme_light = rule.get("theme_light") or rule.get("theme_day")
+                    theme_dark = rule.get("theme_dark") or rule.get("theme_night")
                     theme_static = rule.get("theme")
 
-                    theme_mobile_day = rule.get("theme_mobile_day")
-                    theme_mobile_night = rule.get("theme_mobile_night")
+                    theme_mobile_light = rule.get("theme_mobile_light") or rule.get("theme_mobile_day")
+                    theme_mobile_dark = rule.get("theme_mobile_dark") or rule.get("theme_mobile_night")
                     theme_mobile_static = rule.get("theme_mobile")
 
                     # Desktop theme resolution
-                    if theme_day and theme_night:
-                        target_theme_desktop = theme_day if day else theme_night
-                        target_variant = "day" if day else "night"
+                    if theme_light and theme_dark:
+                        target_theme_desktop = theme_light if day else theme_dark
+                        target_variant = "light" if day else "dark"
                     elif theme_static:
                         target_theme_desktop = theme_static
                         target_variant = "static"
-                    elif theme_day:
-                        target_theme_desktop = theme_day
-                        target_variant = "day"
-                    elif theme_night:
-                        target_theme_desktop = theme_night
-                        target_variant = "night"
+                    elif theme_light:
+                        target_theme_desktop = theme_light
+                        target_variant = "light"
+                    elif theme_dark:
+                        target_theme_desktop = theme_dark
+                        target_variant = "dark"
 
                     # Mobile theme resolution
-                    if theme_mobile_day and theme_mobile_night:
-                        target_theme_mobile = theme_mobile_day if day else theme_mobile_night
+                    if theme_mobile_light and theme_mobile_dark:
+                        target_theme_mobile = theme_mobile_light if day else theme_mobile_dark
                     elif theme_mobile_static:
                         target_theme_mobile = theme_mobile_static
-                    elif theme_mobile_day:
-                        target_theme_mobile = theme_mobile_day
-                    elif theme_mobile_night:
-                        target_theme_mobile = theme_mobile_night
+                    elif theme_mobile_light:
+                        target_theme_mobile = theme_mobile_light
+                    elif theme_mobile_dark:
+                        target_theme_mobile = theme_mobile_dark
                     else:
                         target_theme_mobile = target_theme_desktop
 
@@ -355,11 +403,11 @@ class ThemeSwitchCoordinator:
             # Fallback if no rule matched
             if not target_theme_desktop:
                 target_rule_id = "default_fallback"
-                target_rule_name = "Standard Fallback"
+                target_rule_name = "Default Fallback"
                 target_priority = 0
-                target_theme_desktop = self.default_theme_day if day else self.default_theme_night
-                target_theme_mobile = self.default_theme_mobile_day if day else self.default_theme_mobile_night
-                target_variant = "day" if day else "night"
+                target_theme_desktop = self.default_theme_light if day else self.default_theme_dark
+                target_theme_mobile = self.default_theme_mobile_light if day else self.default_theme_mobile_dark
+                target_variant = "light" if day else "dark"
                 matched_conds = ["fallback"]
 
         if not target_theme_mobile:
@@ -399,6 +447,7 @@ class ThemeSwitchCoordinator:
                 "active_rule_name": self.active_rule_name,
                 "priority": self.active_priority,
                 "mode": self.mode,
+                "variant": self.day_night_variant,
                 "day_night_variant": self.day_night_variant,
                 "transition_enabled": self.transition_enabled,
                 "transition_duration": self.transition_duration,
@@ -408,20 +457,21 @@ class ThemeSwitchCoordinator:
         self._notify_listeners()
 
     async def _async_apply_theme_to_frontend(self, theme_name: str) -> None:
-        """Call frontend.set_theme service to update Home Assistant theme live."""
+        """Call frontend.set_theme service for both light and dark modes."""
         if not self.hass.services.has_service("frontend", "set_theme"):
             _LOGGER.warning("Service frontend.set_theme is not available.")
             return
 
-        try:
-            await self.hass.services.async_call(
-                "frontend",
-                "set_theme",
-                {"name": theme_name},
-                blocking=True,
-            )
-        except Exception as err:  # noqa: BLE001
-            _LOGGER.error("Failed to set theme '%s': %s", theme_name, err)
+        for mode_slot in ("light", "dark"):
+            try:
+                await self.hass.services.async_call(
+                    "frontend",
+                    "set_theme",
+                    {"name": theme_name, "mode": mode_slot},
+                    blocking=True,
+                )
+            except Exception as err:  # noqa: BLE001
+                _LOGGER.error("Failed to set theme '%s' (mode=%s): %s", theme_name, mode_slot, err)
 
     def register_listener(self, listener: Callable[[], None]) -> CALLBACK_TYPE:
         """Register a callback for coordinator updates."""
@@ -443,6 +493,9 @@ class ThemeSwitchCoordinator:
 
     async def async_unload(self) -> None:
         """Clean up listeners and timers."""
+        if self._entity_unsub:
+            self._entity_unsub()
+            self._entity_unsub = None
         for unsub in self._unsub_listeners:
             unsub()
         self._unsub_listeners.clear()

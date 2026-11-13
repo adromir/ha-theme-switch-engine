@@ -6,8 +6,8 @@
         "description": "Konfiguriere die universelle, hierarchische Theme-Wechsel-Engine für Home Assistant.",
         "data": {
           "mode": "Betriebsmodus",
-          "default_theme_day": "Standard Tag-Theme",
-          "default_theme_night": "Standard Nacht-Theme",
+          "default_theme_light": "Standard Light-Theme",
+          "default_theme_dark": "Standard Dark-Theme",
           "weather_entity": "Wetter-Entität (optional)",
           "transition_enabled": "Weichen Live-Übergangseffekt aktivieren",
           "transition_duration": "Übergangsdauer (ms)"
@@ -25,15 +25,17 @@
         "description": "Passe Betriebsmodus, Fallback-Themes und den Live-Übergangseffekt an.",
         "data": {
           "mode": "Betriebsmodus",
-          "default_theme_day": "Standard Tag-Theme",
-          "default_theme_night": "Standard Nacht-Theme",
+          "default_theme_light": "Standard Desktop Light-Theme",
+          "default_theme_dark": "Standard Desktop Dark-Theme",
+          "default_theme_mobile_light": "Standard Mobil Light-Theme",
+          "default_theme_mobile_dark": "Standard Mobil Dark-Theme",
           "weather_entity": "Wetter-Entität (optional)",
           "transition_enabled": "Weichen Live-Übergangseffekt aktivieren",
           "transition_duration": "Übergangsdauer (ms)",
-          "sun_elevation_threshold": "Sonnen-Elevationsgrenze (Grad)"
+          "sun_elevation_threshold": "Sonnen-Elevationsgrenze (Grad)",
+          "show_sidebar": "In Home Assistant Seitenleiste anzeigen"
         }
       }
     }
   }
 }
-

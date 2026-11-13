@@ -2,7 +2,6 @@
  * Theme Switch Engine: Universal Client Helper
  * - Detects Desktop vs. Mobile / Companion App
  * - Synchronizes themes in real-time across all HA pages
- * - Built-in native Glassmorphism engine (frosted glass sidebar, header, cards)
  * - Hardware-accelerated smooth live transitions
  */
 (function() {
@@ -31,8 +30,14 @@
     return Boolean(mq || ua || touch);
   }
 
-  function isCompanionApp() {
-    return navigator.userAgent.includes('Home Assistant') || Boolean(window.externalApp);
+  function resolveDesiredDark(targetTheme, attrs) {
+    const lower = String(targetTheme || '').toLowerCase();
+    if (lower.includes('light') || lower.includes('hell')) return false;
+    if (lower.includes('dark') || lower.includes('dunkel')) return true;
+    const mode = String(attrs?.mode || '').toLowerCase();
+    if (mode === 'force light' || mode === 'force day') return false;
+    if (mode === 'force dark' || mode === 'force night') return true;
+    return undefined;
   }
 
   function applyTransitionStyle(durationMs) {
@@ -78,44 +83,32 @@
       applyTransitionStyle(0);
     }
 
+    const desiredDark = resolveDesiredDark(targetTheme, attrs);
+
     // Force synchronize client theme and keep localStorage aligned for ANY theme
     try {
+      const storageObj = desiredDark !== undefined
+        ? { theme: targetTheme, dark: desiredDark }
+        : { theme: targetTheme };
       try {
-        localStorage.setItem('selectedTheme', JSON.stringify(targetTheme));
+        localStorage.setItem('selectedTheme', JSON.stringify(storageObj));
       } catch (e) {}
 
       const ha = document.querySelector('home-assistant');
       const curTheme = ha?.hass?.themes?.theme;
-      if (curTheme !== targetTheme) {
-        const evtDetail = { theme: targetTheme };
+      const curDark = ha?.hass?.themes?.darkMode;
+      const needsUpdate = (curTheme !== targetTheme) || (desiredDark !== undefined && curDark !== desiredDark);
+
+      if (needsUpdate) {
+        const evtDetail = desiredDark !== undefined
+          ? { theme: targetTheme, dark: desiredDark }
+          : { theme: targetTheme };
         window.dispatchEvent(new CustomEvent('settheme', { bubbles: true, composed: true, detail: evtDetail }));
         document.dispatchEvent(new CustomEvent('settheme', { bubbles: true, composed: true, detail: evtDetail }));
         if (ha) {
           ha.dispatchEvent(new CustomEvent('settheme', { bubbles: true, composed: true, detail: evtDetail }));
           if (typeof ha._applyTheme === 'function') {
-            try { ha._applyTheme(targetTheme); } catch (e) {}
-          }
-        }
-      }
-    } catch (e) {}
-  }
-
-    // Force synchronize client theme and keep localStorage aligned
-    try {
-      try {
-        localStorage.setItem('selectedTheme', JSON.stringify(targetTheme));
-      } catch (e) {}
-
-      const ha = document.querySelector('home-assistant');
-      const curTheme = ha?.hass?.themes?.theme;
-      if (curTheme !== targetTheme) {
-        const evtDetail = { theme: targetTheme };
-        window.dispatchEvent(new CustomEvent('settheme', { bubbles: true, composed: true, detail: evtDetail }));
-        document.dispatchEvent(new CustomEvent('settheme', { bubbles: true, composed: true, detail: evtDetail }));
-        if (ha) {
-          ha.dispatchEvent(new CustomEvent('settheme', { bubbles: true, composed: true, detail: evtDetail }));
-          if (typeof ha._applyTheme === 'function') {
-            try { ha._applyTheme(targetTheme); } catch (e) {}
+            try { ha._applyTheme(evtDetail); } catch (e) {}
           }
         }
       }
@@ -157,7 +150,7 @@
         if (!haEl || !haEl.hass) return;
         const st = haEl.hass.states['sensor.active_theme'] || haEl.hass.states['sensor.theme_switch_engine_active_theme'];
         if (st && st.state !== 'unknown') {
-          const currentKey = `${st.state}:${st.attributes?.theme_mobile}:${st.last_updated}`;
+          const currentKey = `${st.state}:${st.attributes?.theme_mobile}:${st.attributes?.mode}:${st.last_updated}`;
           if (currentKey !== lastSensorKey) {
             lastSensorKey = currentKey;
             syncThemeFromState(st);

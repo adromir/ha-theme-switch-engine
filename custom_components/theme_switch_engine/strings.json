@@ -6,8 +6,8 @@
         "description": "Configure the universal hierarchical theme switching engine for Home Assistant.",
         "data": {
           "mode": "Operational Mode",
-          "default_theme_day": "Default Daytime Theme",
-          "default_theme_night": "Default Nighttime Theme",
+          "default_theme_light": "Default Light Theme",
+          "default_theme_dark": "Default Dark Theme",
           "weather_entity": "Weather Entity (optional)",
           "transition_enabled": "Enable Smooth Live Transition Effect",
           "transition_duration": "Transition Duration (ms)"
@@ -25,15 +25,17 @@
         "description": "Configure active mode, fallback themes, and live transition effect.",
         "data": {
           "mode": "Operational Mode",
-          "default_theme_day": "Default Daytime Theme",
-          "default_theme_night": "Default Nighttime Theme",
+          "default_theme_light": "Default Desktop Light Theme",
+          "default_theme_dark": "Default Desktop Dark Theme",
+          "default_theme_mobile_light": "Default Mobile Light Theme",
+          "default_theme_mobile_dark": "Default Mobile Dark Theme",
           "weather_entity": "Weather Entity (optional)",
           "transition_enabled": "Enable Smooth Live Transition Effect",
           "transition_duration": "Transition Duration (ms)",
-          "sun_elevation_threshold": "Sun Elevation Threshold (degrees)"
+          "sun_elevation_threshold": "Sun Elevation Threshold (degrees)",
+          "show_sidebar": "Show in Home Assistant Sidebar"
         }
       }
     }
   }
 }
-

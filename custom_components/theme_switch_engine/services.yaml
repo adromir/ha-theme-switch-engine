@@ -11,7 +11,7 @@ evaluate:
 
 set_mode:
   name: Set Engine Mode
-  description: Change operational mode between Auto, Force Day, Force Night, and Paused.
+  description: Change operational mode between Auto, Force Light, Force Dark, and Paused.
   fields:
     mode:
       name: Mode
@@ -22,8 +22,8 @@ set_mode:
         select:
           options:
             - "Auto (Engine)"
-            - "Force Day"
-            - "Force Night"
+            - "Force Light"
+            - "Force Dark"
             - "Paused"
 
 preview_theme:

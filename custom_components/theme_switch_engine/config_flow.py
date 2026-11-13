@@ -13,23 +13,21 @@ from homeassistant.data_entry_flow import FlowResult
 from homeassistant.helpers import selector
 
 from .const import (
-    CONF_DEFAULT_THEME_DAY,
-    CONF_DEFAULT_THEME_MOBILE_DAY,
-    CONF_DEFAULT_THEME_MOBILE_NIGHT,
-    CONF_DEFAULT_THEME_NIGHT,
-    CONF_GLASSMORPHISM_ENABLED,
+    CONF_DEFAULT_THEME_DARK,
+    CONF_DEFAULT_THEME_LIGHT,
+    CONF_DEFAULT_THEME_MOBILE_DARK,
+    CONF_DEFAULT_THEME_MOBILE_LIGHT,
     CONF_SHOW_SIDEBAR,
     CONF_SUN_ELEVATION_THRESHOLD,
     CONF_TRANSITION_DURATION,
     CONF_TRANSITION_ENABLED,
     CONF_WEATHER_ENTITY,
-    DEFAULT_GLASSMORPHISM_ENABLED,
     DEFAULT_SHOW_SIDEBAR,
     DEFAULT_SUN_ELEVATION_THRESHOLD,
-    DEFAULT_THEME_DAY,
-    DEFAULT_THEME_MOBILE_DAY,
-    DEFAULT_THEME_MOBILE_NIGHT,
-    DEFAULT_THEME_NIGHT,
+    DEFAULT_THEME_DARK,
+    DEFAULT_THEME_LIGHT,
+    DEFAULT_THEME_MOBILE_DARK,
+    DEFAULT_THEME_MOBILE_LIGHT,
     DEFAULT_TRANSITION_DURATION,
     DEFAULT_TRANSITION_ENABLED,
     DOMAIN,
@@ -73,8 +71,8 @@ class ThemeSwitchConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         themes = get_available_themes(self.hass)
         schema = vol.Schema({
             vol.Required("mode", default="Auto (Engine)"): vol.In(MODES),
-            vol.Required(CONF_DEFAULT_THEME_DAY, default=DEFAULT_THEME_DAY): vol.In(themes),
-            vol.Required(CONF_DEFAULT_THEME_NIGHT, default=DEFAULT_THEME_NIGHT): vol.In(themes),
+            vol.Required(CONF_DEFAULT_THEME_LIGHT, default=DEFAULT_THEME_LIGHT): vol.In(themes),
+            vol.Required(CONF_DEFAULT_THEME_DARK, default=DEFAULT_THEME_DARK): vol.In(themes),
             vol.Optional(CONF_WEATHER_ENTITY): selector.EntitySelector(
                 selector.EntitySelectorConfig(domain="weather")
             ),
@@ -109,10 +107,10 @@ class ThemeSwitchOptionsFlow(config_entries.OptionsFlow):
 
         themes = get_available_themes(self.hass)
         cur_mode = coordinator.mode if coordinator else "Auto (Engine)"
-        cur_day = coordinator.default_theme_day if coordinator else DEFAULT_THEME_DAY
-        cur_night = coordinator.default_theme_night if coordinator else DEFAULT_THEME_NIGHT
-        cur_mob_day = coordinator.default_theme_mobile_day if coordinator else DEFAULT_THEME_MOBILE_DAY
-        cur_mob_night = coordinator.default_theme_mobile_night if coordinator else DEFAULT_THEME_MOBILE_NIGHT
+        cur_light = coordinator.default_theme_light if coordinator else DEFAULT_THEME_LIGHT
+        cur_dark = coordinator.default_theme_dark if coordinator else DEFAULT_THEME_DARK
+        cur_mob_light = coordinator.default_theme_mobile_light if coordinator else DEFAULT_THEME_MOBILE_LIGHT
+        cur_mob_dark = coordinator.default_theme_mobile_dark if coordinator else DEFAULT_THEME_MOBILE_DARK
         cur_trans = coordinator.transition_enabled if coordinator else DEFAULT_TRANSITION_ENABLED
         cur_dur = coordinator.transition_duration if coordinator else DEFAULT_TRANSITION_DURATION
         cur_elev = coordinator.elevation_threshold if coordinator else DEFAULT_SUN_ELEVATION_THRESHOLD
@@ -120,11 +118,11 @@ class ThemeSwitchOptionsFlow(config_entries.OptionsFlow):
         cur_sb = coordinator.show_sidebar if coordinator else DEFAULT_SHOW_SIDEBAR
 
         schema = vol.Schema({
-            vol.Required("mode", default=cur_mode): vol.In(MODES),
-            vol.Required(CONF_DEFAULT_THEME_DAY, default=cur_day if cur_day in themes else themes[0]): vol.In(themes),
-            vol.Required(CONF_DEFAULT_THEME_NIGHT, default=cur_night if cur_night in themes else themes[0]): vol.In(themes),
-            vol.Required(CONF_DEFAULT_THEME_MOBILE_DAY, default=cur_mob_day if cur_mob_day in themes else themes[0]): vol.In(themes),
-            vol.Required(CONF_DEFAULT_THEME_MOBILE_NIGHT, default=cur_mob_night if cur_mob_night in themes else themes[0]): vol.In(themes),
+            vol.Required("mode", default=cur_mode if cur_mode in MODES else MODES[0]): vol.In(MODES),
+            vol.Required(CONF_DEFAULT_THEME_LIGHT, default=cur_light if cur_light in themes else themes[0]): vol.In(themes),
+            vol.Required(CONF_DEFAULT_THEME_DARK, default=cur_dark if cur_dark in themes else themes[0]): vol.In(themes),
+            vol.Required(CONF_DEFAULT_THEME_MOBILE_LIGHT, default=cur_mob_light if cur_mob_light in themes else themes[0]): vol.In(themes),
+            vol.Required(CONF_DEFAULT_THEME_MOBILE_DARK, default=cur_mob_dark if cur_mob_dark in themes else themes[0]): vol.In(themes),
             vol.Optional(CONF_WEATHER_ENTITY, description={"suggested_value": cur_w}): selector.EntitySelector(
                 selector.EntitySelectorConfig(domain="weather")
             ),

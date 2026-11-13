@@ -1,0 +1,41 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Siapkan Theme Switch Engine",
+        "description": "Konfigurasikan mesin pengalih tema hierarkis universal untuk Home Assistant.",
+        "data": {
+          "mode": "Mode Operasi",
+          "default_theme_light": "Tema Light Default",
+          "default_theme_dark": "Tema Dark Default",
+          "weather_entity": "Entitas Cuaca (opsional)",
+          "transition_enabled": "Aktifkan Efek Transisi Langsung yang Halus",
+          "transition_duration": "Durasi Transisi (md)"
+        }
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "Theme Switch Engine sudah dikonfigurasi."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Opsi Theme Switch Engine",
+        "description": "Sesuaikan mode aktif, tema cadangan (fallback), dan efek transisi langsung.",
+        "data": {
+          "mode": "Mode Operasi",
+          "default_theme_light": "Tema Light Desktop Default",
+          "default_theme_dark": "Tema Dark Desktop Default",
+          "default_theme_mobile_light": "Tema Light Seluler Default",
+          "default_theme_mobile_dark": "Tema Dark Seluler Default",
+          "weather_entity": "Entitas Cuaca (opsional)",
+          "transition_enabled": "Aktifkan Efek Transisi Langsung yang Halus",
+          "transition_duration": "Durasi Transisi (md)",
+          "sun_elevation_threshold": "Ambang Elevasi Matahari (derajat)",
+          "show_sidebar": "Tampilkan di Bilah Samping Home Assistant"
+        }
+      }
+    }
+  }
+}

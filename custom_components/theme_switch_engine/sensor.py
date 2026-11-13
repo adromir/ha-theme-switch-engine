@@ -47,12 +47,12 @@ class ThemeSwitchEngineActiveSensor(SensorEntity):
 
     @property
     def icon(self) -> str:
-        """Return dynamic icon based on day/night or mode."""
+        """Return dynamic icon based on active theme variant or mode."""
         if self._coordinator.mode == "Paused":
             return "mdi:pause-circle"
-        if self._coordinator.day_night_variant == "day":
+        if self._coordinator.day_night_variant in ("light", "day"):
             return "mdi:weather-sunny"
-        if self._coordinator.day_night_variant == "night":
+        if self._coordinator.day_night_variant in ("dark", "night"):
             return "mdi:weather-night"
         return "mdi:palette-swatch"
 
@@ -65,6 +65,7 @@ class ThemeSwitchEngineActiveSensor(SensorEntity):
             "active_rule_id": self._coordinator.active_rule_id,
             "active_rule_name": self._coordinator.active_rule_name,
             "priority": self._coordinator.active_priority,
+            "variant": self._coordinator.day_night_variant,
             "day_night_variant": self._coordinator.day_night_variant,
             "mode": self._coordinator.mode,
             "last_switch": self._coordinator.last_switch,

@@ -15,7 +15,7 @@ from homeassistant.core import HomeAssistant, ServiceCall, callback
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.typing import ConfigType
 
-from .const import DOMAIN, MODES, PANEL_URL, STATIC_URL, VERSION
+from .const import DOMAIN, MODE_FORCE_DARK, MODE_FORCE_DAY, MODE_FORCE_LIGHT, MODE_FORCE_NIGHT, MODES, PANEL_URL, STATIC_URL, VERSION
 from .coordinator import ThemeSwitchCoordinator
 
 try:
@@ -109,6 +109,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     async def handle_set_mode(call: ServiceCall) -> None:
         """Change operational mode."""
         mode = call.data.get("mode")
+        if mode == MODE_FORCE_DAY:
+            mode = MODE_FORCE_LIGHT
+        elif mode == MODE_FORCE_NIGHT:
+            mode = MODE_FORCE_DARK
         if mode in MODES:
             await coordinator.async_set_mode(mode)
         else:
@@ -132,7 +136,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         DOMAIN,
         "set_mode",
         handle_set_mode,
-        schema=vol.Schema({vol.Required("mode"): vol.In(MODES)}),
+        schema=vol.Schema({vol.Required("mode"): vol.In([*MODES, MODE_FORCE_DAY, MODE_FORCE_NIGHT])}),
     )
 
     hass.services.async_register(
@@ -211,6 +215,7 @@ def ws_rules_get(
             "active_rule_id": coordinator.active_rule_id,
             "active_rule_name": coordinator.active_rule_name,
             "priority": coordinator.active_priority,
+            "variant": coordinator.day_night_variant,
             "day_night_variant": coordinator.day_night_variant,
             "matched_conditions": coordinator.matched_conditions,
             "transition_enabled": coordinator.transition_enabled,

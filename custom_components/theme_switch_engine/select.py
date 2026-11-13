@@ -7,7 +7,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DOMAIN, MODES
+from .const import DOMAIN, MODE_FORCE_DARK, MODE_FORCE_DAY, MODE_FORCE_LIGHT, MODE_FORCE_NIGHT, MODES
 from .coordinator import ThemeSwitchCoordinator
 
 
@@ -46,6 +46,10 @@ class ThemeSwitchEngineModeSelect(SelectEntity):
 
     async def async_select_option(self, option: str) -> None:
         """Change the operational mode."""
+        if option == MODE_FORCE_DAY:
+            option = MODE_FORCE_LIGHT
+        elif option == MODE_FORCE_NIGHT:
+            option = MODE_FORCE_DARK
         if option in MODES:
             await self._coordinator.async_set_mode(option)
             self.async_write_ha_state()
