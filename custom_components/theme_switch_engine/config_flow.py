@@ -118,3 +118,4 @@ class ThemeSwitchOptionsFlow(config_entries.OptionsFlow):
         })
 
         return self.async_show_form(step_id="init", data_schema=schema)
+

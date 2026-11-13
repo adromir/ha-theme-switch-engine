@@ -43,3 +43,4 @@
   // Default initial transition
   applyTransition(800);
 })();
+

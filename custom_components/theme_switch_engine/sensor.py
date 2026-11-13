@@ -72,3 +72,4 @@ class ThemeSwitchEngineActiveSensor(SensorEntity):
             "transition_duration_ms": self._coordinator.transition_duration,
             "rules_count": len(self._coordinator.rules),
         }
+

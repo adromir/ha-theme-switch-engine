@@ -49,3 +49,4 @@ class ThemeSwitchEngineModeSelect(SelectEntity):
         if option in MODES:
             await self._coordinator.async_set_mode(option)
             self.async_write_ha_state()
+

@@ -267,3 +267,4 @@ def evaluate_rule_conditions(
             return False, []
 
     return True, matched_names
+

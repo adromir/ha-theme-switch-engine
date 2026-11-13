@@ -381,3 +381,4 @@ class ThemeSwitchCoordinator:
         self._unsub_listeners.clear()
         if self._preview_task and not self._preview_task.done():
             self._preview_task.cancel()
+
