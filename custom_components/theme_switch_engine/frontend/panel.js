@@ -91,7 +91,8 @@ const TRANSLATIONS = {
     sun_max_elev: 'Max Elevation (°)',
     entity_label: 'Entity (search or select from list)',
     entity_placeholder: 'Select or type entity_id...',
-    entity_state_label: 'Target State (auto-generated from entity)',
+    entity_state_label: 'Target State',
+    weather_custom_state_option: '-- Enter custom weather state --',
     entity_custom_state_option: '-- Enter custom state --',
     entity_custom_state_label: 'Custom State Value',
     entity_current_hint: 'Current state',
@@ -226,7 +227,8 @@ const TRANSLATIONS = {
     sun_max_elev: 'Max. Elevation (°)',
     entity_label: 'Entität (suchen oder aus Liste wählen)',
     entity_placeholder: 'Entität auswählen oder tippen...',
-    entity_state_label: 'Ziel-Zustand (dynamisch aus Entität generiert)',
+    entity_state_label: 'Ziel-Zustand',
+    weather_custom_state_option: '-- Eigenen Wetterzustand eingeben --',
     entity_custom_state_option: '-- Eigenen Zustand eingeben --',
     entity_custom_state_label: 'Eigener Zustandswert',
     entity_current_hint: 'Aktueller Zustand',
@@ -361,7 +363,8 @@ const TRANSLATIONS = {
     sun_max_elev: 'Elevasi Maks (°)',
     entity_label: 'Entitas (cari atau pilih dari daftar)',
     entity_placeholder: 'Pilih atau ketik entity_id...',
-    entity_state_label: 'Status Target (dibuat otomatis dari entitas)',
+    entity_state_label: 'Status Target',
+    weather_custom_state_option: '-- Masukkan status cuaca kustom --',
     entity_custom_state_option: '-- Masukkan status kustom --',
     entity_custom_state_label: 'Nilai Status Kustom',
     entity_current_hint: 'Status saat ini',
@@ -746,11 +749,14 @@ class ThemeSwitchEnginePanel extends HTMLElement {
     const weatherEntities = Object.keys(allStates).filter(eid => eid.startsWith('weather.')).sort();
 
     if (cond.type === 'weather') {
-      const selectedStates = Array.isArray(cond.states)
+      const rawStates = Array.isArray(cond.states)
         ? cond.states.map(s => String(s).trim().toLowerCase())
         : String(cond.states || '').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
       const candidates = this._getWeatherStatesForEntity(cond.entity_id);
-      const customExtras = selectedStates.filter(s => !candidates.includes(s));
+      const curState = rawStates[0] || '';
+      const isCustom = curState && !candidates.includes(curState);
+      const selectVal = isCustom ? '__custom__' : (candidates.includes(curState) ? curState : (candidates[0] || 'sunny'));
+      const customVal = isCustom ? curState : '';
 
       return `
         <div class="sub-field-group">
@@ -765,18 +771,18 @@ class ThemeSwitchEnginePanel extends HTMLElement {
         </div>
         <div class="sub-field-group">
           <label class="field-label">${this._t('weather_states_label')}</label>
-          <div class="pill-grid">
+          <select class="cond-weather-val" data-cidx="${idx}">
             ${candidates.map(st => {
-              const active = selectedStates.includes(st);
               const tKey = WEATHER_KEY_MAP[st];
               const label = tKey ? `${this._t(tKey)} (${st})` : st;
-              return `<button type="button" class="cond-pill cond-weather-pill ${active ? 'active' : ''}" data-cidx="${idx}" data-val="${this._escapeHtml(st)}">${this._escapeHtml(label)}</button>`;
+              return `<option value="${this._escapeHtml(st)}" ${selectVal === st ? 'selected' : ''}>${this._escapeHtml(label)}</option>`;
             }).join('')}
-          </div>
+            <option value="__custom__" ${selectVal === '__custom__' ? 'selected' : ''}>${this._t('weather_custom_state_option')}</option>
+          </select>
         </div>
-        <div class="sub-field-group">
+        <div class="sub-field-group cond-weather-custom-wrap" data-cidx="${idx}" style="display:${selectVal === '__custom__' ? 'block' : 'none'};">
           <label class="field-label">${this._t('weather_custom_label')}</label>
-          <input type="text" class="cond-weather-custom" data-cidx="${idx}" value="${this._escapeHtml(customExtras.join(', '))}" placeholder="e.g. drizzle, sleet">
+          <input type="text" class="cond-weather-custom-input" data-cidx="${idx}" value="${this._escapeHtml(customVal)}" placeholder="e.g. drizzle, sleet">
         </div>
       `;
     }
@@ -1344,10 +1350,6 @@ class ThemeSwitchEnginePanel extends HTMLElement {
               <span>${this._t('transition_duration')}</span>
               <input type="number" id="numTransitionDuration" value="${cfg.transition_duration || 800}" min="100" max="3000" step="50" style="width:90px;"> ms
             </div>
-            <label style="display:flex;align-items:center;gap:10px;font-size:13px;cursor:pointer;">
-              <input type="checkbox" id="chkShowSidebar" ${cfg.show_sidebar !== false ? 'checked' : ''}>
-              <span><strong>${this._t('show_sidebar')}</strong></span>
-            </label>
           </div>
         </div>
       </div>
@@ -1501,10 +1503,6 @@ class ThemeSwitchEnginePanel extends HTMLElement {
     if (numDur) {
       numDur.onchange = () => this._saveConfig({ transition_duration: parseInt(numDur.value, 10) || 800 });
     }
-    const chkSb = root.getElementById('chkShowSidebar');
-    if (chkSb) {
-      chkSb.onchange = () => this._saveConfig({ show_sidebar: chkSb.checked });
-    }
 
     // Rules enable/disable toggle
     root.querySelectorAll('.rule-toggle').forEach(chk => {
@@ -1597,34 +1595,33 @@ class ThemeSwitchEnginePanel extends HTMLElement {
           const cIdx = parseInt(sel.getAttribute('data-cidx'), 10);
           if (sel.value) this._draftRule.conditions[cIdx].entity_id = sel.value;
           else delete this._draftRule.conditions[cIdx].entity_id;
+          const candidates = this._getWeatherStatesForEntity(sel.value);
+          if (candidates.length > 0 && !candidates.includes(this._draftRule.conditions[cIdx].states)) {
+            this._draftRule.conditions[cIdx].states = candidates[0];
+          }
           this._render();
         };
       });
 
-      root.querySelectorAll('.cond-weather-pill').forEach(btn => {
-        btn.onclick = () => {
-          const cIdx = parseInt(btn.getAttribute('data-cidx'), 10);
-          const val = btn.getAttribute('data-val');
-          const cond = this._draftRule.conditions[cIdx];
-          const cur = Array.isArray(cond.states)
-            ? [...cond.states]
-            : String(cond.states || '').split(',').map(s => s.trim()).filter(Boolean);
-          const pos = cur.indexOf(val);
-          if (pos >= 0) cur.splice(pos, 1);
-          else cur.push(val);
-          cond.states = cur.join(',');
-          btn.classList.toggle('active');
+      root.querySelectorAll('.cond-weather-val').forEach(sel => {
+        sel.onchange = () => {
+          const cIdx = parseInt(sel.getAttribute('data-cidx'), 10);
+          const customWrap = root.querySelector(`.cond-weather-custom-wrap[data-cidx="${cIdx}"]`);
+          if (sel.value === '__custom__') {
+            if (customWrap) customWrap.style.display = 'block';
+            const customInp = root.querySelector(`.cond-weather-custom-input[data-cidx="${cIdx}"]`);
+            this._draftRule.conditions[cIdx].states = customInp ? customInp.value.trim().toLowerCase() : '';
+          } else {
+            if (customWrap) customWrap.style.display = 'none';
+            this._draftRule.conditions[cIdx].states = sel.value;
+          }
         };
       });
 
-      root.querySelectorAll('.cond-weather-custom').forEach(inp => {
-        inp.onchange = () => {
+      root.querySelectorAll('.cond-weather-custom-input').forEach(inp => {
+        inp.oninput = () => {
           const cIdx = parseInt(inp.getAttribute('data-cidx'), 10);
-          const cond = this._draftRule.conditions[cIdx];
-          const pillActives = Array.from(root.querySelectorAll(`.cond-weather-pill.active[data-cidx="${cIdx}"]`))
-            .map(b => b.getAttribute('data-val'));
-          const customVals = inp.value.split(',').map(s => s.trim()).filter(Boolean);
-          cond.states = Array.from(new Set([...pillActives, ...customVals])).join(',');
+          this._draftRule.conditions[cIdx].states = inp.value.trim().toLowerCase();
         };
       });
 
@@ -1748,12 +1745,14 @@ class ThemeSwitchEnginePanel extends HTMLElement {
         saveRuleBtn.onclick = () => {
           this._syncDraftMetaFromInputs();
           // Ensure weather custom inputs are flushed if user didn't blur before click
-          root.querySelectorAll('.cond-weather-custom').forEach(inp => {
-            const cIdx = parseInt(inp.getAttribute('data-cidx'), 10);
-            const pillActives = Array.from(root.querySelectorAll(`.cond-weather-pill.active[data-cidx="${cIdx}"]`))
-              .map(b => b.getAttribute('data-val'));
-            const customVals = inp.value.split(',').map(s => s.trim()).filter(Boolean);
-            this._draftRule.conditions[cIdx].states = Array.from(new Set([...pillActives, ...customVals])).join(',');
+          root.querySelectorAll('.cond-weather-val').forEach(sel => {
+            const cIdx = parseInt(sel.getAttribute('data-cidx'), 10);
+            if (sel.value === '__custom__') {
+              const customInp = root.querySelector(`.cond-weather-custom-input[data-cidx="${cIdx}"]`);
+              if (customInp) this._draftRule.conditions[cIdx].states = customInp.value.trim().toLowerCase();
+            } else {
+              this._draftRule.conditions[cIdx].states = sel.value;
+            }
           });
 
           const newRule = {

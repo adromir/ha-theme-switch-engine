@@ -226,7 +226,7 @@ class ThemeSwitchCoordinator:
 
     @property
     def show_sidebar(self) -> bool:
-        return bool(self._config.get(CONF_SHOW_SIDEBAR, DEFAULT_SHOW_SIDEBAR))
+        return True
 
     @property
     def transition_enabled(self) -> bool:

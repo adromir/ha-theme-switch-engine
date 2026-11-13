@@ -115,7 +115,6 @@ class ThemeSwitchOptionsFlow(config_entries.OptionsFlow):
         cur_dur = coordinator.transition_duration if coordinator else DEFAULT_TRANSITION_DURATION
         cur_elev = coordinator.elevation_threshold if coordinator else DEFAULT_SUN_ELEVATION_THRESHOLD
         cur_w = coordinator.weather_entity if coordinator else None
-        cur_sb = coordinator.show_sidebar if coordinator else DEFAULT_SHOW_SIDEBAR
 
         schema = vol.Schema({
             vol.Required("mode", default=cur_mode if cur_mode in MODES else MODES[0]): vol.In(MODES),
@@ -129,7 +128,6 @@ class ThemeSwitchOptionsFlow(config_entries.OptionsFlow):
             vol.Optional(CONF_TRANSITION_ENABLED, default=cur_trans): bool,
             vol.Optional(CONF_TRANSITION_DURATION, default=cur_dur): int,
             vol.Optional(CONF_SUN_ELEVATION_THRESHOLD, default=cur_elev): float,
-            vol.Optional(CONF_SHOW_SIDEBAR, default=cur_sb): bool,
         })
 
         return self.async_show_form(step_id="init", data_schema=schema)

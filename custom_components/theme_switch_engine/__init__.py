@@ -84,8 +84,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
-    # Register Standalone Custom Panel in HA Sidebar if enabled
-    if coordinator.show_sidebar and hasattr(panel_custom, "async_register_panel"):
+    # Register Standalone Custom Panel in HA Sidebar
+    if hasattr(panel_custom, "async_register_panel"):
         try:
             await panel_custom.async_register_panel(
                 hass,
