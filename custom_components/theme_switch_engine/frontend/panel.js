@@ -96,15 +96,13 @@ const TRANSLATIONS = {
     entity_custom_state_option: '-- Enter custom state --',
     entity_custom_state_label: 'Custom State Value',
     entity_current_hint: 'Current state',
-    theme_desktop_light: 'Desktop Light Theme',
-    theme_desktop_dark: 'Desktop Dark Theme',
-    theme_mobile_light: 'Mobile Light Theme (optional)',
-    theme_mobile_dark: 'Mobile Dark Theme (optional)',
+    theme_desktop: 'Desktop Theme',
+    theme_mobile: 'Mobile Theme (optional)',
     cancel: 'Cancel',
     save_rule: 'Save Rule',
     err_save_rules: 'Error saving rules: ',
     err_save_config: 'Error saving configuration: ',
-    mode_auto: 'Auto (Engine)',
+    mode_auto: 'Automatic (Engine)',
     mode_force_light: 'Force Light',
     mode_force_dark: 'Force Dark',
     mode_paused: 'Paused',
@@ -232,17 +230,15 @@ const TRANSLATIONS = {
     entity_custom_state_option: '-- Eigenen Zustand eingeben --',
     entity_custom_state_label: 'Eigener Zustandswert',
     entity_current_hint: 'Aktueller Zustand',
-    theme_desktop_light: 'Desktop Light-Theme',
-    theme_desktop_dark: 'Desktop Dark-Theme',
-    theme_mobile_light: 'Mobil Light-Theme (optional)',
-    theme_mobile_dark: 'Mobil Dark-Theme (optional)',
+    theme_desktop: 'Desktop-Theme',
+    theme_mobile: 'Mobil-Theme (optional)',
     cancel: 'Abbrechen',
     save_rule: 'Regel speichern',
     err_save_rules: 'Fehler beim Speichern der Regeln: ',
     err_save_config: 'Fehler beim Speichern der Konfiguration: ',
-    mode_auto: 'Auto (Engine)',
-    mode_force_light: 'Force Light (Light erzwingen)',
-    mode_force_dark: 'Force Dark (Dark erzwingen)',
+    mode_auto: 'Automatisch (Engine)',
+    mode_force_light: 'Light erzwingen',
+    mode_force_dark: 'Dark erzwingen',
     mode_paused: 'Pausiert',
     day_mon: 'Mo',
     day_tue: 'Di',
@@ -368,17 +364,15 @@ const TRANSLATIONS = {
     entity_custom_state_option: '-- Masukkan status kustom --',
     entity_custom_state_label: 'Nilai Status Kustom',
     entity_current_hint: 'Status saat ini',
-    theme_desktop_light: 'Tema Light Desktop',
-    theme_desktop_dark: 'Tema Dark Desktop',
-    theme_mobile_light: 'Tema Light Seluler (opsional)',
-    theme_mobile_dark: 'Tema Dark Seluler (opsional)',
+    theme_desktop: 'Tema Desktop',
+    theme_mobile: 'Tema Seluler (opsional)',
     cancel: 'Batal',
     save_rule: 'Simpan Aturan',
     err_save_rules: 'Gagal menyimpan aturan: ',
     err_save_config: 'Gagal menyimpan konfigurasi: ',
     mode_auto: 'Otomatis (Engine)',
-    mode_force_light: 'Paksa Light (Force Light)',
-    mode_force_dark: 'Paksa Dark (Force Dark)',
+    mode_force_light: 'Paksa Light',
+    mode_force_dark: 'Paksa Dark',
     mode_paused: 'Dijeda',
     day_mon: 'Sen',
     day_tue: 'Sel',
@@ -660,8 +654,7 @@ class ThemeSwitchEnginePanel extends HTMLElement {
 
   _openRuleModal(ruleIndex = null) {
     const themes = this._getAllThemes();
-    const defaultLight = this._data?.config?.default_theme_light || this._data?.config?.default_theme_day || themes[0] || 'default';
-    const defaultDark = this._data?.config?.default_theme_dark || this._data?.config?.default_theme_night || themes[0] || 'default';
+    const defaultDesktop = this._data?.config?.default_theme_light || this._data?.config?.default_theme_day || themes[0] || 'default';
 
     if (ruleIndex !== null && this._data?.rules?.[ruleIndex]) {
       const src = this._data.rules[ruleIndex];
@@ -675,10 +668,8 @@ class ThemeSwitchEnginePanel extends HTMLElement {
         name: src.name || this._t('new_rule_default'),
         priority: src.priority ?? 50,
         enabled: src.enabled !== false,
-        theme_light: src.theme_light || src.theme_day || src.theme || defaultLight,
-        theme_dark: src.theme_dark || src.theme_night || src.theme || defaultDark,
-        theme_mobile_light: src.theme_mobile_light || src.theme_mobile_day || src.theme_mobile || '',
-        theme_mobile_dark: src.theme_mobile_dark || src.theme_mobile_night || src.theme_mobile || '',
+        theme: src.theme || src.theme_light || src.theme_day || src.theme_dark || src.theme_night || defaultDesktop,
+        theme_mobile: src.theme_mobile || src.theme_mobile_light || src.theme_mobile_day || src.theme_mobile_dark || src.theme_mobile_night || '',
         conditions: conds,
       };
     } else {
@@ -688,10 +679,8 @@ class ThemeSwitchEnginePanel extends HTMLElement {
         name: this._t('new_rule_default'),
         priority: 50,
         enabled: true,
-        theme_light: defaultLight,
-        theme_dark: defaultDark,
-        theme_mobile_light: '',
-        theme_mobile_dark: '',
+        theme: defaultDesktop,
+        theme_mobile: '',
         conditions: [{ type: 'weather', states: 'rainy' }],
       };
     }
@@ -1216,9 +1205,6 @@ class ThemeSwitchEnginePanel extends HTMLElement {
             <select id="selGlobalMode">
               ${modes.map(m => `<option value="${this._escapeHtml(m)}" ${m === d.mode ? 'selected' : ''}>${this._escapeHtml(this._getModeDisplay(m))}</option>`).join('')}
             </select>
-            <button class="btn" id="btnEvaluate">
-              <ha-icon icon="mdi:refresh" style="--mdc-icon-size:16px;"></ha-icon> ${this._t('evaluate_now')}
-            </button>
           </div>
         </div>
 
@@ -1402,34 +1388,18 @@ class ThemeSwitchEnginePanel extends HTMLElement {
               </div>
             `).join('')}
 
-            <div class="grid-2" style="margin-top:16px;margin-bottom:14px;">
+            <div class="grid-2" style="margin-top:16px;margin-bottom:18px;">
               <div>
-                <label class="field-label">${this._t('theme_desktop_light')}</label>
-                <select id="mThemeLight" style="width:100%;">
-                  ${themes.map(t => `<option value="${this._escapeHtml(t)}" ${t === this._draftRule.theme_light ? 'selected' : ''}>${this._escapeHtml(t)}</option>`).join('')}
+                <label class="field-label">${this._t('theme_desktop')}</label>
+                <select id="mThemeDesktop" style="width:100%;">
+                  ${themes.map(t => `<option value="${this._escapeHtml(t)}" ${t === this._draftRule.theme ? 'selected' : ''}>${this._escapeHtml(t)}</option>`).join('')}
                 </select>
               </div>
               <div>
-                <label class="field-label">${this._t('theme_desktop_dark')}</label>
-                <select id="mThemeDark" style="width:100%;">
-                  ${themes.map(t => `<option value="${this._escapeHtml(t)}" ${t === this._draftRule.theme_dark ? 'selected' : ''}>${this._escapeHtml(t)}</option>`).join('')}
-                </select>
-              </div>
-            </div>
-
-            <div class="grid-2" style="margin-bottom:18px;">
-              <div>
-                <label class="field-label">${this._t('theme_mobile_light')}</label>
-                <select id="mMobThemeLight" style="width:100%;">
-                  <option value="" ${!this._draftRule.theme_mobile_light ? 'selected' : ''}>${this._t('same_as_desktop')}</option>
-                  ${themes.map(t => `<option value="${this._escapeHtml(t)}" ${t === this._draftRule.theme_mobile_light ? 'selected' : ''}>${this._escapeHtml(t)}</option>`).join('')}
-                </select>
-              </div>
-              <div>
-                <label class="field-label">${this._t('theme_mobile_dark')}</label>
-                <select id="mMobThemeDark" style="width:100%;">
-                  <option value="" ${!this._draftRule.theme_mobile_dark ? 'selected' : ''}>${this._t('same_as_desktop')}</option>
-                  ${themes.map(t => `<option value="${this._escapeHtml(t)}" ${t === this._draftRule.theme_mobile_dark ? 'selected' : ''}>${this._escapeHtml(t)}</option>`).join('')}
+                <label class="field-label">${this._t('theme_mobile')}</label>
+                <select id="mThemeMobile" style="width:100%;">
+                  <option value="" ${!this._draftRule.theme_mobile ? 'selected' : ''}>${this._t('same_as_desktop')}</option>
+                  ${themes.map(t => `<option value="${this._escapeHtml(t)}" ${t === this._draftRule.theme_mobile ? 'selected' : ''}>${this._escapeHtml(t)}</option>`).join('')}
                 </select>
               </div>
             </div>
@@ -1451,17 +1421,13 @@ class ThemeSwitchEnginePanel extends HTMLElement {
     const root = this.shadowRoot;
     const nameEl = root.getElementById('mRuleName');
     const prioEl = root.getElementById('mRulePrio');
-    const tLightEl = root.getElementById('mThemeLight');
-    const tDarkEl = root.getElementById('mThemeDark');
-    const mLightEl = root.getElementById('mMobThemeLight');
-    const mDarkEl = root.getElementById('mMobThemeDark');
+    const tDeskEl = root.getElementById('mThemeDesktop');
+    const tMobEl = root.getElementById('mThemeMobile');
 
     if (nameEl) this._draftRule.name = nameEl.value;
     if (prioEl) this._draftRule.priority = parseInt(prioEl.value, 10) || 0;
-    if (tLightEl) this._draftRule.theme_light = tLightEl.value;
-    if (tDarkEl) this._draftRule.theme_dark = tDarkEl.value;
-    if (mLightEl) this._draftRule.theme_mobile_light = mLightEl.value;
-    if (mDarkEl) this._draftRule.theme_mobile_dark = mDarkEl.value;
+    if (tDeskEl) this._draftRule.theme = tDeskEl.value;
+    if (tMobEl) this._draftRule.theme_mobile = tMobEl.value;
   }
 
   _attachEvents() {
@@ -1471,12 +1437,6 @@ class ThemeSwitchEnginePanel extends HTMLElement {
     const selMode = root.getElementById('selGlobalMode');
     if (selMode) {
       selMode.onchange = () => this._setMode(selMode.value);
-    }
-
-    // Evaluate Button
-    const btnEval = root.getElementById('btnEvaluate');
-    if (btnEval) {
-      btnEval.onclick = () => this._evaluate();
     }
 
     // Default themes change
@@ -1760,15 +1720,15 @@ class ThemeSwitchEnginePanel extends HTMLElement {
             name: (this._draftRule.name || '').trim() || this._t('new_rule_default'),
             priority: parseInt(this._draftRule.priority, 10) || 0,
             enabled: this._draftRule.enabled !== false,
-            theme_light: this._draftRule.theme_light || 'default',
-            theme_dark: this._draftRule.theme_dark || 'default',
+            theme: this._draftRule.theme || 'default',
+            theme_mobile: this._draftRule.theme_mobile || '',
+            theme_light: this._draftRule.theme || 'default',
+            theme_dark: this._draftRule.theme || 'default',
             conditions: this._draftRule.conditions,
           };
-          if (this._draftRule.theme_mobile_light) {
-            newRule.theme_mobile_light = this._draftRule.theme_mobile_light;
-          }
-          if (this._draftRule.theme_mobile_dark) {
-            newRule.theme_mobile_dark = this._draftRule.theme_mobile_dark;
+          if (this._draftRule.theme_mobile) {
+            newRule.theme_mobile_light = this._draftRule.theme_mobile;
+            newRule.theme_mobile_dark = this._draftRule.theme_mobile;
           }
 
           const rList = [...(this._data.rules || [])];

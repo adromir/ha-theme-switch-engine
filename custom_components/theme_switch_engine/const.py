@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 DOMAIN = "theme_switch_engine"
-VERSION = "1.3.0"
+VERSION = "1.3.2"
 
 STORAGE_KEY = "theme_switch_engine.config"
 STORAGE_VERSION = 1
