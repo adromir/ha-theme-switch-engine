@@ -2,6 +2,7 @@
 
 import sys
 import types
+from typing import Any
 import unittest
 from datetime import datetime
 from pathlib import Path
@@ -20,6 +21,9 @@ def _install_ha_stubs() -> None:
     core_mod = types.ModuleType("homeassistant.core")
     config_entries_mod = types.ModuleType("homeassistant.config_entries")
     helpers_mod = types.ModuleType("homeassistant.helpers")
+    typing_mod = types.ModuleType("homeassistant.helpers.typing")
+    typing_mod.ConfigType = dict[str, Any]
+    sys.modules["homeassistant.helpers.typing"] = typing_mod
     storage_mod = types.ModuleType("homeassistant.helpers.storage")
     event_mod = types.ModuleType("homeassistant.helpers.event")
     selector_mod = types.ModuleType("homeassistant.helpers.selector")
@@ -43,7 +47,7 @@ def _install_ha_stubs() -> None:
     core_mod.callback = callback
     core_mod.Event = MagicMock
     core_mod.ServiceCall = MagicMock
-    core_mod.CALLBACK_TYPE = Any = object
+    core_mod.CALLBACK_TYPE = object
 
     class Platform:
         SENSOR = "sensor"
@@ -56,7 +60,23 @@ def _install_ha_stubs() -> None:
     vol_mod.Optional = lambda k, **kw: k
     vol_mod.In = lambda opts: MagicMock()
 
+    comp_mod = types.ModuleType("homeassistant.components")
+    frontend_mod = types.ModuleType("homeassistant.components.frontend")
+    panel_mod = types.ModuleType("homeassistant.components.panel_custom")
+    ws_mod = types.ModuleType("homeassistant.components.websocket_api")
+
+    frontend_mod.add_extra_js_url = MagicMock()
+    frontend_mod.async_remove_panel = MagicMock()
+    panel_mod.async_register_panel = MagicMock()
+    ws_mod.websocket_command = lambda schema: lambda fn: fn
+    ws_mod.async_response = lambda fn: fn
+    ws_mod.ActiveConnection = MagicMock
+
     sys.modules["homeassistant"] = ha_mod
+    sys.modules["homeassistant.components"] = comp_mod
+    sys.modules["homeassistant.components.frontend"] = frontend_mod
+    sys.modules["homeassistant.components.panel_custom"] = panel_mod
+    sys.modules["homeassistant.components.websocket_api"] = ws_mod
     sys.modules["homeassistant.core"] = core_mod
     sys.modules["homeassistant.config_entries"] = config_entries_mod
     sys.modules["homeassistant.helpers"] = helpers_mod
@@ -185,6 +205,34 @@ class TestThemeSwitchEngine(unittest.TestCase):
         dt_winter = datetime(2026, 12, 15, 14, 0, 0)
         is_match, conds = evaluate_rule_conditions(hass, rule, dt_winter)
         self.assertFalse(is_match)
+
+    def test_desktop_and_mobile_rule_resolution(self):
+        rule = {
+            "name": "Targeted Rule",
+            "priority": 100,
+            "theme": "Vision Glass Dark",
+            "theme_desktop": "Vision Glass Desktop",
+            "theme_mobile": "Vision Glass Mobile",
+            "conditions": [],
+        }
+        # Desktop theme priority
+        theme_desktop = rule.get("theme_desktop") or rule.get("theme")
+        theme_mobile = rule.get("theme_mobile") or rule.get("theme")
+        self.assertEqual(theme_desktop, "Vision Glass Desktop")
+        self.assertEqual(theme_mobile, "Vision Glass Mobile")
+
+        # Fallback to general theme if target not explicitly defined
+        rule_fallback = {
+            "name": "General Rule",
+            "priority": 50,
+            "theme": "Vision Glass",
+            "conditions": [],
+        }
+        theme_desktop_fallback = rule_fallback.get("theme_desktop") or rule_fallback.get("theme")
+        theme_mobile_fallback = rule_fallback.get("theme_mobile") or rule_fallback.get("theme")
+        self.assertEqual(theme_desktop_fallback, "Vision Glass")
+        self.assertEqual(theme_mobile_fallback, "Vision Glass")
+
 
 
 if __name__ == "__main__":

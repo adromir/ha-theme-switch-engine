@@ -14,13 +14,21 @@ from homeassistant.helpers import selector
 
 from .const import (
     CONF_DEFAULT_THEME_DAY,
+    CONF_DEFAULT_THEME_MOBILE_DAY,
+    CONF_DEFAULT_THEME_MOBILE_NIGHT,
     CONF_DEFAULT_THEME_NIGHT,
+    CONF_GLASSMORPHISM_ENABLED,
+    CONF_SHOW_SIDEBAR,
     CONF_SUN_ELEVATION_THRESHOLD,
     CONF_TRANSITION_DURATION,
     CONF_TRANSITION_ENABLED,
     CONF_WEATHER_ENTITY,
+    DEFAULT_GLASSMORPHISM_ENABLED,
+    DEFAULT_SHOW_SIDEBAR,
     DEFAULT_SUN_ELEVATION_THRESHOLD,
     DEFAULT_THEME_DAY,
+    DEFAULT_THEME_MOBILE_DAY,
+    DEFAULT_THEME_MOBILE_NIGHT,
     DEFAULT_THEME_NIGHT,
     DEFAULT_TRANSITION_DURATION,
     DEFAULT_TRANSITION_ENABLED,
@@ -100,21 +108,29 @@ class ThemeSwitchOptionsFlow(config_entries.OptionsFlow):
         cur_mode = coordinator.mode if coordinator else "Auto (Engine)"
         cur_day = coordinator.default_theme_day if coordinator else DEFAULT_THEME_DAY
         cur_night = coordinator.default_theme_night if coordinator else DEFAULT_THEME_NIGHT
+        cur_mob_day = coordinator.default_theme_mobile_day if coordinator else DEFAULT_THEME_MOBILE_DAY
+        cur_mob_night = coordinator.default_theme_mobile_night if coordinator else DEFAULT_THEME_MOBILE_NIGHT
         cur_trans = coordinator.transition_enabled if coordinator else DEFAULT_TRANSITION_ENABLED
         cur_dur = coordinator.transition_duration if coordinator else DEFAULT_TRANSITION_DURATION
         cur_elev = coordinator.elevation_threshold if coordinator else DEFAULT_SUN_ELEVATION_THRESHOLD
         cur_w = coordinator.weather_entity if coordinator else None
+        cur_glass = coordinator.glassmorphism_enabled if coordinator else DEFAULT_GLASSMORPHISM_ENABLED
+        cur_sb = coordinator.show_sidebar if coordinator else DEFAULT_SHOW_SIDEBAR
 
         schema = vol.Schema({
             vol.Required("mode", default=cur_mode): vol.In(MODES),
             vol.Required(CONF_DEFAULT_THEME_DAY, default=cur_day if cur_day in themes else themes[0]): vol.In(themes),
             vol.Required(CONF_DEFAULT_THEME_NIGHT, default=cur_night if cur_night in themes else themes[0]): vol.In(themes),
+            vol.Required(CONF_DEFAULT_THEME_MOBILE_DAY, default=cur_mob_day if cur_mob_day in themes else themes[0]): vol.In(themes),
+            vol.Required(CONF_DEFAULT_THEME_MOBILE_NIGHT, default=cur_mob_night if cur_mob_night in themes else themes[0]): vol.In(themes),
             vol.Optional(CONF_WEATHER_ENTITY, description={"suggested_value": cur_w}): selector.EntitySelector(
                 selector.EntitySelectorConfig(domain="weather")
             ),
+            vol.Optional(CONF_GLASSMORPHISM_ENABLED, default=cur_glass): bool,
             vol.Optional(CONF_TRANSITION_ENABLED, default=cur_trans): bool,
             vol.Optional(CONF_TRANSITION_DURATION, default=cur_dur): int,
             vol.Optional(CONF_SUN_ELEVATION_THRESHOLD, default=cur_elev): float,
+            vol.Optional(CONF_SHOW_SIDEBAR, default=cur_sb): bool,
         })
 
         return self.async_show_form(step_id="init", data_schema=schema)

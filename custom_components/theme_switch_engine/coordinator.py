@@ -16,14 +16,22 @@ from homeassistant.helpers.storage import Store
 
 from .const import (
     CONF_DEFAULT_THEME_DAY,
+    CONF_DEFAULT_THEME_MOBILE_DAY,
+    CONF_DEFAULT_THEME_MOBILE_NIGHT,
     CONF_DEFAULT_THEME_NIGHT,
+    CONF_GLASSMORPHISM_ENABLED,
     CONF_RULES,
+    CONF_SHOW_SIDEBAR,
     CONF_SUN_ELEVATION_THRESHOLD,
     CONF_TRANSITION_DURATION,
     CONF_TRANSITION_ENABLED,
     CONF_WEATHER_ENTITY,
+    DEFAULT_GLASSMORPHISM_ENABLED,
+    DEFAULT_SHOW_SIDEBAR,
     DEFAULT_SUN_ELEVATION_THRESHOLD,
     DEFAULT_THEME_DAY,
+    DEFAULT_THEME_MOBILE_DAY,
+    DEFAULT_THEME_MOBILE_NIGHT,
     DEFAULT_THEME_NIGHT,
     DEFAULT_TRANSITION_DURATION,
     DEFAULT_TRANSITION_ENABLED,
@@ -56,6 +64,8 @@ class ThemeSwitchCoordinator:
         # State tracking
         self.mode: str = MODE_AUTO
         self.active_theme: str | None = None
+        self.active_theme_desktop: str | None = None
+        self.active_theme_mobile: str | None = None
         self.active_rule_id: str | None = None
         self.active_rule_name: str = "Initializing"
         self.active_priority: int = 0
@@ -117,10 +127,14 @@ class ThemeSwitchCoordinator:
             "mode": MODE_AUTO,
             CONF_DEFAULT_THEME_DAY: DEFAULT_THEME_DAY,
             CONF_DEFAULT_THEME_NIGHT: DEFAULT_THEME_NIGHT,
+            CONF_DEFAULT_THEME_MOBILE_DAY: DEFAULT_THEME_MOBILE_DAY,
+            CONF_DEFAULT_THEME_MOBILE_NIGHT: DEFAULT_THEME_MOBILE_NIGHT,
             CONF_TRANSITION_ENABLED: DEFAULT_TRANSITION_ENABLED,
             CONF_TRANSITION_DURATION: DEFAULT_TRANSITION_DURATION,
             CONF_SUN_ELEVATION_THRESHOLD: DEFAULT_SUN_ELEVATION_THRESHOLD,
             CONF_WEATHER_ENTITY: None,
+            CONF_GLASSMORPHISM_ENABLED: DEFAULT_GLASSMORPHISM_ENABLED,
+            CONF_SHOW_SIDEBAR: DEFAULT_SHOW_SIDEBAR,
             CONF_RULES: [
                 {
                     "id": "rule_christmas",
@@ -170,6 +184,22 @@ class ThemeSwitchCoordinator:
     @property
     def default_theme_night(self) -> str:
         return self._config.get(CONF_DEFAULT_THEME_NIGHT, DEFAULT_THEME_NIGHT)
+
+    @property
+    def default_theme_mobile_day(self) -> str:
+        return self._config.get(CONF_DEFAULT_THEME_MOBILE_DAY, self.default_theme_day)
+
+    @property
+    def default_theme_mobile_night(self) -> str:
+        return self._config.get(CONF_DEFAULT_THEME_MOBILE_NIGHT, self.default_theme_night)
+
+    @property
+    def glassmorphism_enabled(self) -> bool:
+        return bool(self._config.get(CONF_GLASSMORPHISM_ENABLED, DEFAULT_GLASSMORPHISM_ENABLED))
+
+    @property
+    def show_sidebar(self) -> bool:
+        return bool(self._config.get(CONF_SHOW_SIDEBAR, DEFAULT_SHOW_SIDEBAR))
 
     @property
     def transition_enabled(self) -> bool:
@@ -248,7 +278,8 @@ class ThemeSwitchCoordinator:
         now_dt = datetime.now()
         day = is_daytime(self.hass, self.elevation_threshold)
 
-        target_theme: str | None = None
+        target_theme_desktop: str | None = None
+        target_theme_mobile: str | None = None
         target_rule_id: str | None = None
         target_rule_name: str = "Fallback"
         target_priority: int = 0
@@ -261,12 +292,14 @@ class ThemeSwitchCoordinator:
             return
 
         if self.mode == MODE_FORCE_DAY:
-            target_theme = self.default_theme_day
+            target_theme_desktop = self.default_theme_day
+            target_theme_mobile = self.default_theme_mobile_day
             target_rule_name = "Manuell: Tag erzwungen"
             target_variant = "day"
             matched_conds = ["mode=force_day"]
         elif self.mode == MODE_FORCE_NIGHT:
-            target_theme = self.default_theme_night
+            target_theme_desktop = self.default_theme_night
+            target_theme_mobile = self.default_theme_mobile_night
             target_rule_name = "Manuell: Nacht erzwungen"
             target_variant = "night"
             matched_conds = ["mode=force_night"]
@@ -294,34 +327,57 @@ class ThemeSwitchCoordinator:
                     theme_night = rule.get("theme_night")
                     theme_static = rule.get("theme")
 
+                    theme_mobile_day = rule.get("theme_mobile_day")
+                    theme_mobile_night = rule.get("theme_mobile_night")
+                    theme_mobile_static = rule.get("theme_mobile")
+
+                    # Desktop theme resolution
                     if theme_day and theme_night:
-                        target_theme = theme_day if day else theme_night
+                        target_theme_desktop = theme_day if day else theme_night
                         target_variant = "day" if day else "night"
                     elif theme_static:
-                        target_theme = theme_static
+                        target_theme_desktop = theme_static
                         target_variant = "static"
                     elif theme_day:
-                        target_theme = theme_day
+                        target_theme_desktop = theme_day
                         target_variant = "day"
                     elif theme_night:
-                        target_theme = theme_night
+                        target_theme_desktop = theme_night
                         target_variant = "night"
+
+                    # Mobile theme resolution
+                    if theme_mobile_day and theme_mobile_night:
+                        target_theme_mobile = theme_mobile_day if day else theme_mobile_night
+                    elif theme_mobile_static:
+                        target_theme_mobile = theme_mobile_static
+                    elif theme_mobile_day:
+                        target_theme_mobile = theme_mobile_day
+                    elif theme_mobile_night:
+                        target_theme_mobile = theme_mobile_night
+                    else:
+                        target_theme_mobile = target_theme_desktop
 
                     break
 
             # Fallback if no rule matched
-            if not target_theme:
+            if not target_theme_desktop:
                 target_rule_id = "default_fallback"
                 target_rule_name = "Standard Fallback"
                 target_priority = 0
-                target_theme = self.default_theme_day if day else self.default_theme_night
+                target_theme_desktop = self.default_theme_day if day else self.default_theme_night
+                target_theme_mobile = self.default_theme_mobile_day if day else self.default_theme_mobile_night
                 target_variant = "day" if day else "night"
                 matched_conds = ["fallback"]
 
-        # Check if theme actually changed
-        theme_changed = target_theme != self.active_theme
+        if not target_theme_mobile:
+            target_theme_mobile = target_theme_desktop
 
-        self.active_theme = target_theme
+        # Check if theme actually changed
+        theme_changed = (target_theme_desktop != self.active_theme_desktop) or (target_theme_mobile != self.active_theme_mobile)
+
+        self.active_theme = target_theme_desktop
+        self.active_theme_desktop = target_theme_desktop
+        self.active_theme_mobile = target_theme_mobile
         self.active_rule_id = target_rule_id
         self.active_rule_name = target_rule_name
         self.active_priority = target_priority
@@ -331,12 +387,31 @@ class ThemeSwitchCoordinator:
         if theme_changed:
             self.last_switch = now_dt.strftime("%Y-%m-%d %H:%M:%S")
             _LOGGER.info(
-                "Theme Switch Engine applying theme '%s' (Rule: '%s', Priority: %d)",
-                target_theme,
+                "Theme Switch Engine applying themes Desktop='%s', Mobile='%s' (Rule: '%s', Priority: %d)",
+                target_theme_desktop,
+                target_theme_mobile,
                 target_rule_name,
                 target_priority,
             )
-            await self._async_apply_theme_to_frontend(target_theme)
+            await self._async_apply_theme_to_frontend(target_theme_desktop)
+
+        # Broadcast update event on Home Assistant event bus
+        self.hass.bus.async_fire(
+            "theme_switch_engine_updated",
+            {
+                "active_theme": self.active_theme,
+                "active_theme_desktop": self.active_theme_desktop,
+                "active_theme_mobile": self.active_theme_mobile,
+                "active_rule_id": self.active_rule_id,
+                "active_rule_name": self.active_rule_name,
+                "priority": self.active_priority,
+                "mode": self.mode,
+                "day_night_variant": self.day_night_variant,
+                "glassmorphism_enabled": self.glassmorphism_enabled,
+                "transition_enabled": self.transition_enabled,
+                "transition_duration": self.transition_duration,
+            },
+        )
 
         self._notify_listeners()
 

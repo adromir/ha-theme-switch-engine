@@ -60,6 +60,8 @@ class ThemeSwitchEngineActiveSensor(SensorEntity):
     def extra_state_attributes(self) -> dict[str, Any]:
         """Return rule metadata and engine state."""
         return {
+            "theme_desktop": self._coordinator.active_theme_desktop,
+            "theme_mobile": self._coordinator.active_theme_mobile,
             "active_rule_id": self._coordinator.active_rule_id,
             "active_rule_name": self._coordinator.active_rule_name,
             "priority": self._coordinator.active_priority,
@@ -68,6 +70,7 @@ class ThemeSwitchEngineActiveSensor(SensorEntity):
             "last_switch": self._coordinator.last_switch,
             "matched_conditions": self._coordinator.matched_conditions,
             "preview_active": self._coordinator.preview_active,
+            "glassmorphism_enabled": self._coordinator.glassmorphism_enabled,
             "transition_enabled": self._coordinator.transition_enabled,
             "transition_duration_ms": self._coordinator.transition_duration,
             "rules_count": len(self._coordinator.rules),
