@@ -247,9 +247,11 @@ class TestThemeSwitchEngine(unittest.TestCase):
             MODES,
             MODE_FORCE_LIGHT,
             MODE_FORCE_DARK,
+            MODE_DEFAULT,
         )
         self.assertIn(MODE_FORCE_LIGHT, MODES)
         self.assertIn(MODE_FORCE_DARK, MODES)
+        self.assertIn(MODE_DEFAULT, MODES)
         self.assertNotIn("Force Day", MODES)
         self.assertNotIn("Force Night", MODES)
 
@@ -262,6 +264,29 @@ class TestThemeSwitchEngine(unittest.TestCase):
         for lang_json in (de_json, id_json, strings_json):
             self.assertEqual(set(en_json["options"]["step"]["init"]["data"].keys()), set(lang_json["options"]["step"]["init"]["data"].keys()))
             self.assertEqual(set(en_json["config"]["step"]["user"]["data"].keys()), set(lang_json["config"]["step"]["user"]["data"].keys()))
+
+
+    def test_rule_effect_and_sound_attributes(self):
+        rule = {
+            "name": "Rainy Mood",
+            "priority": 80,
+            "theme": "Vision Glass Dark",
+            "effect": "rain",
+            "effect_mode": "loop_endless",
+            "effect_cycles": 5,
+            "sound_file": "gentle_rain.mp3",
+            "sound_mode": "loop_count",
+            "sound_loops": 4,
+            "sound_volume": 65,
+            "conditions": [],
+        }
+        self.assertEqual(rule.get("effect"), "rain")
+        self.assertEqual(rule.get("effect_mode"), "loop_endless")
+        self.assertEqual(rule.get("effect_cycles"), 5)
+        self.assertEqual(rule.get("sound_file"), "gentle_rain.mp3")
+        self.assertEqual(rule.get("sound_mode"), "loop_count")
+        self.assertEqual(rule.get("sound_loops"), 4)
+        self.assertEqual(rule.get("sound_volume"), 65)
 
 
 if __name__ == "__main__":

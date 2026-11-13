@@ -105,7 +105,28 @@ const TRANSLATIONS = {
     mode_auto: 'Automatic (Engine)',
     mode_force_light: 'Force Light',
     mode_force_dark: 'Force Dark',
+    mode_default: 'Home Assistant Default',
     mode_paused: 'Paused',
+    effects_and_sound: 'Visual Effects & Sound (Optional)',
+    effect_label: 'Screen Effect',
+    effect_none: 'None',
+    effect_snow: '❄️ Snowfall',
+    effect_rain: '🌧️ Rain',
+    effect_aurora: '🌌 Aurora Borealis',
+    effect_fog: '🌫️ Fog',
+    effect_fireworks: '🎆 Fireworks',
+    effect_leaves: '🍂 Falling Leaves',
+    effect_playback_mode: 'Effect Playback',
+    mode_loop_endless: 'Loop endlessly',
+    mode_once: 'Play once',
+    mode_loop_count: 'Repeat X times',
+    effect_cycles_label: 'Effect Cycles',
+    sound_file_label: 'Sound File (from /media)',
+    sound_none: 'None',
+    sound_playback_mode: 'Sound Playback',
+    sound_loops_label: 'Sound Loops',
+    sound_volume_label: 'Volume',
+    media_subfolder_label: 'Sounds Subfolder in /media',
     day_mon: 'Mon',
     day_tue: 'Tue',
     day_wed: 'Wed',
@@ -239,7 +260,28 @@ const TRANSLATIONS = {
     mode_auto: 'Automatisch (Engine)',
     mode_force_light: 'Light erzwingen',
     mode_force_dark: 'Dark erzwingen',
+    mode_default: 'Home Assistant Standard',
     mode_paused: 'Pausiert',
+    effects_and_sound: 'Visuelle Effekte & Sound (Optional)',
+    effect_label: 'Bildschirm-Effekt',
+    effect_none: 'Keine',
+    effect_snow: '❄️ Schneefall',
+    effect_rain: '🌧️ Regen',
+    effect_aurora: '🌌 Polarlicht',
+    effect_fog: '🌫️ Nebel',
+    effect_fireworks: '🎆 Feuerwerk',
+    effect_leaves: '🍂 Fallende Blätter',
+    effect_playback_mode: 'Effekt-Wiedergabe',
+    mode_loop_endless: 'Dauerhaft wiederholen',
+    mode_once: 'Einmalig abspielen',
+    mode_loop_count: 'X-mal wiederholen',
+    effect_cycles_label: 'Effekt-Wiederholungen',
+    sound_file_label: 'Sound-Datei (aus /media)',
+    sound_none: 'Keine',
+    sound_playback_mode: 'Sound-Wiedergabe',
+    sound_loops_label: 'Sound-Wiederholungen',
+    sound_volume_label: 'Lautstärke',
+    media_subfolder_label: 'Sound-Unterordner in /media',
     day_mon: 'Mo',
     day_tue: 'Di',
     day_wed: 'Mi',
@@ -373,7 +415,28 @@ const TRANSLATIONS = {
     mode_auto: 'Otomatis (Engine)',
     mode_force_light: 'Paksa Light',
     mode_force_dark: 'Paksa Dark',
+    mode_default: 'Standar Home Assistant',
     mode_paused: 'Dijeda',
+    effects_and_sound: 'Efek Visual & Audio (Opsional)',
+    effect_label: 'Efek Layar',
+    effect_none: 'Tidak ada',
+    effect_snow: '❄️ Salju',
+    effect_rain: '🌧️ Hujan',
+    effect_aurora: '🌌 Aurora Borealis',
+    effect_fog: '🌫️ Kabut',
+    effect_fireworks: '🎆 Kembang Api',
+    effect_leaves: '🍂 Daun Berguguran',
+    effect_playback_mode: 'Pemutaran Efek',
+    mode_loop_endless: 'Ulang terus-menerus',
+    mode_once: 'Putar sekali',
+    mode_loop_count: 'Ulangi X kali',
+    effect_cycles_label: 'Siklus Efek',
+    sound_file_label: 'File Audio (dari /media)',
+    sound_none: 'Tidak ada',
+    sound_playback_mode: 'Pemutaran Audio',
+    sound_loops_label: 'Pengulangan Audio',
+    sound_volume_label: 'Volume',
+    media_subfolder_label: 'Subfolder Audio di /media',
     day_mon: 'Sen',
     day_tue: 'Sel',
     day_wed: 'Rab',
@@ -465,6 +528,8 @@ class ThemeSwitchEnginePanel extends HTMLElement {
     this._showRuleModal = false;
     this._editingRuleIndex = null;
     this._draftRule = null;
+    this._mediaFiles = [];
+    this._previewAudio = null;
   }
 
   set hass(val) {
@@ -501,6 +566,7 @@ class ThemeSwitchEnginePanel extends HTMLElement {
     if (mode === 'Auto (Engine)') return this._t('mode_auto');
     if (mode === 'Force Light' || mode === 'Force Day') return this._t('mode_force_light');
     if (mode === 'Force Dark' || mode === 'Force Night') return this._t('mode_force_dark');
+    if (mode === 'Home Assistant Default') return this._t('mode_default');
     if (mode === 'Paused') return this._t('mode_paused');
     return mode;
   }
@@ -511,6 +577,12 @@ class ThemeSwitchEnginePanel extends HTMLElement {
     try {
       const res = await this._hass.callWS({ type: 'theme_switch_engine/rules/get' });
       this._data = res;
+      try {
+        const mediaRes = await this._hass.callWS({ type: 'theme_switch_engine/media/list' });
+        this._mediaFiles = mediaRes?.files || [];
+      } catch (me) {
+        this._mediaFiles = [];
+      }
       this._render();
     } catch (err) {
       console.error('[ThemeEngine] Failed to load data:', err);
@@ -671,6 +743,13 @@ class ThemeSwitchEnginePanel extends HTMLElement {
         theme: src.theme || src.theme_light || src.theme_day || src.theme_dark || src.theme_night || defaultDesktop,
         theme_mobile: src.theme_mobile || src.theme_mobile_light || src.theme_mobile_day || src.theme_mobile_dark || src.theme_mobile_night || '',
         conditions: conds,
+        effect: src.effect || 'none',
+        effect_mode: src.effect_mode || 'loop_endless',
+        effect_cycles: src.effect_cycles || 3,
+        sound_file: src.sound_file || 'none',
+        sound_mode: src.sound_mode || 'play_once',
+        sound_loops: src.sound_loops || 3,
+        sound_volume: src.sound_volume ?? 50,
       };
     } else {
       this._editingRuleIndex = null;
@@ -682,6 +761,13 @@ class ThemeSwitchEnginePanel extends HTMLElement {
         theme: defaultDesktop,
         theme_mobile: '',
         conditions: [{ type: 'weather', states: 'rainy' }],
+        effect: 'none',
+        effect_mode: 'loop_endless',
+        effect_cycles: 3,
+        sound_file: 'none',
+        sound_mode: 'play_once',
+        sound_loops: 3,
+        sound_volume: 50,
       };
     }
 
@@ -1293,6 +1379,8 @@ class ThemeSwitchEnginePanel extends HTMLElement {
               const tMobDark = r.theme_mobile_dark || r.theme_mobile_night;
               const deskTheme = r.theme || (tLight || tDark ? `${tLight || '-'} / ${tDark || '-'}` : this._t('standard_theme'));
               const mobTheme = r.theme_mobile || (tMobLight || tMobDark ? `${tMobLight || '-'} / ${tMobDark || '-'}` : this._t('same_as_desktop'));
+              const fxBadge = (r.effect && r.effect !== 'none') ? `<span title="${this._escapeHtml(r.effect)}" style="margin-left:5px;font-size:12px;">✨</span>` : '';
+              const sndBadge = (r.sound_file && r.sound_file !== 'none') ? `<span title="${this._escapeHtml(r.sound_file)}" style="margin-left:3px;font-size:12px;">🔊</span>` : '';
 
               return `
                 <tr>
@@ -1303,7 +1391,7 @@ class ThemeSwitchEnginePanel extends HTMLElement {
                     </label>
                   </td>
                   <td><span class="badge-prio">${r.priority || 0}</span></td>
-                  <td><strong>${this._escapeHtml(r.name || this._t('unnamed'))}</strong></td>
+                  <td><strong>${this._escapeHtml(r.name || this._t('unnamed'))}</strong>${fxBadge}${sndBadge}</td>
                   <td style="color:var(--secondary-text-color,#64748b);">${this._escapeHtml(condStr)}</td>
                   <td>${this._escapeHtml(deskTheme)}</td>
                   <td>${this._escapeHtml(mobTheme)}</td>
@@ -1335,6 +1423,10 @@ class ThemeSwitchEnginePanel extends HTMLElement {
             <div style="display:flex;align-items:center;gap:12px;font-size:13px;padding-left:26px;">
               <span>${this._t('transition_duration')}</span>
               <input type="number" id="numTransitionDuration" value="${cfg.transition_duration || 800}" min="100" max="3000" step="50" style="width:90px;"> ms
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;font-size:13px;padding-left:26px;">
+              <span>${this._t('media_subfolder_label')}</span>
+              <input type="text" id="txtMediaSubfolder" value="${this._escapeHtml(cfg.media_subfolder || 'theme_sounds')}" placeholder="theme_sounds" style="width:160px;">
             </div>
           </div>
         </div>
@@ -1404,6 +1496,72 @@ class ThemeSwitchEnginePanel extends HTMLElement {
               </div>
             </div>
 
+            <!-- Visuelle Effekte & Sound -->
+            <div style="background:var(--secondary-background-color,rgba(255,255,255,0.04));border:1px solid var(--divider-color,rgba(255,255,255,0.08));border-radius:10px;padding:14px;margin-bottom:18px;">
+              <div style="font-weight:600;font-size:13px;margin-bottom:12px;display:flex;align-items:center;gap:6px;">
+                <ha-icon icon="mdi:auto-fix" style="--mdc-icon-size:18px;color:var(--primary-color,#38bdf8);"></ha-icon>
+                <span>${this._t('effects_and_sound')}</span>
+              </div>
+              <div class="grid-2" style="margin-bottom:12px;">
+                <div>
+                  <label class="field-label">${this._t('effect_label')}</label>
+                  <select id="mRuleEffect" style="width:100%;">
+                    <option value="none" ${!this._draftRule.effect || this._draftRule.effect === 'none' ? 'selected' : ''}>${this._t('effect_none')}</option>
+                    <option value="snow" ${this._draftRule.effect === 'snow' ? 'selected' : ''}>${this._t('effect_snow')}</option>
+                    <option value="rain" ${this._draftRule.effect === 'rain' ? 'selected' : ''}>${this._t('effect_rain')}</option>
+                    <option value="aurora" ${this._draftRule.effect === 'aurora' ? 'selected' : ''}>${this._t('effect_aurora')}</option>
+                    <option value="fog" ${this._draftRule.effect === 'fog' ? 'selected' : ''}>${this._t('effect_fog')}</option>
+                    <option value="fireworks" ${this._draftRule.effect === 'fireworks' ? 'selected' : ''}>${this._t('effect_fireworks')}</option>
+                    <option value="leaves" ${this._draftRule.effect === 'leaves' ? 'selected' : ''}>${this._t('effect_leaves')}</option>
+                    ${((window.ThemeEngineFX && typeof window.ThemeEngineFX.list === 'function') ? window.ThemeEngineFX.list() : []).map(fx => `<option value="${this._escapeHtml(fx.id)}" ${this._draftRule.effect === fx.id ? 'selected' : ''}>✨ ${this._escapeHtml(fx.name)}</option>`).join('')}
+                  </select>
+                </div>
+                <div>
+                  <label class="field-label">${this._t('effect_playback_mode')}</label>
+                  <div style="display:flex;gap:6px;align-items:center;">
+                    <select id="mRuleEffectMode" style="flex:1;">
+                      <option value="loop_endless" ${this._draftRule.effect_mode === 'loop_endless' ? 'selected' : ''}>${this._t('mode_loop_endless')}</option>
+                      <option value="once" ${this._draftRule.effect_mode === 'once' ? 'selected' : ''}>${this._t('mode_once')}</option>
+                      <option value="loop_count" ${this._draftRule.effect_mode === 'loop_count' ? 'selected' : ''}>${this._t('mode_loop_count')}</option>
+                    </select>
+                    <input type="number" id="mRuleEffectCycles" min="1" max="20" value="${this._draftRule.effect_cycles || 3}" style="width:55px;${this._draftRule.effect_mode === 'loop_count' ? '' : 'display:none;'}" title="${this._t('effect_cycles_label')}" />
+                  </div>
+                </div>
+              </div>
+              <div class="grid-2">
+                <div>
+                  <label class="field-label">${this._t('sound_file_label')}</label>
+                  <div style="display:flex;gap:6px;align-items:center;">
+                    <select id="mRuleSoundFile" style="flex:1;">
+                      <option value="none" ${!this._draftRule.sound_file || this._draftRule.sound_file === 'none' ? 'selected' : ''}>${this._t('sound_none')}</option>
+                      ${(this._mediaFiles || []).map(f => `<option value="${this._escapeHtml(f.filename)}" ${this._draftRule.sound_file === f.filename ? 'selected' : ''}>${this._escapeHtml(f.title)} (${this._escapeHtml(f.filename)})</option>`).join('')}
+                    </select>
+                    <button type="button" class="btn btn-sm" id="btnPreviewSound" style="padding:6px 10px;" title="Preview">
+                      <ha-icon icon="mdi:play" id="iconPreviewSound" style="--mdc-icon-size:16px;"></ha-icon>
+                    </button>
+                  </div>
+                </div>
+                <div>
+                  <label class="field-label">${this._t('sound_playback_mode')}</label>
+                  <div style="display:flex;gap:6px;align-items:center;">
+                    <select id="mRuleSoundMode" style="flex:1;">
+                      <option value="play_once" ${this._draftRule.sound_mode === 'play_once' ? 'selected' : ''}>${this._t('mode_once')}</option>
+                      <option value="loop_count" ${this._draftRule.sound_mode === 'loop_count' ? 'selected' : ''}>${this._t('mode_loop_count')}</option>
+                      <option value="loop_endless" ${this._draftRule.sound_mode === 'loop_endless' ? 'selected' : ''}>${this._t('mode_loop_endless')}</option>
+                    </select>
+                    <input type="number" id="mRuleSoundLoops" min="1" max="20" value="${this._draftRule.sound_loops || 3}" style="width:55px;${this._draftRule.sound_mode === 'loop_count' ? '' : 'display:none;'}" title="${this._t('sound_loops_label')}" />
+                  </div>
+                </div>
+              </div>
+              <div style="margin-top:10px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+                  <label class="field-label" style="margin-bottom:0;">${this._t('sound_volume_label')}</label>
+                  <span id="lblVolumeVal" style="font-size:12px;color:var(--secondary-text-color);">${this._draftRule.sound_volume ?? 50}%</span>
+                </div>
+                <input type="range" id="mRuleSoundVolume" min="0" max="100" value="${this._draftRule.sound_volume ?? 50}" style="width:100%;cursor:pointer;" />
+              </div>
+            </div>
+
             <div style="display:flex;justify-content:flex-end;gap:10px;">
               <button class="btn" id="btnCancelModal">${this._t('cancel')}</button>
               <button class="btn btn-primary" id="btnSaveRuleModal">${this._t('save_rule')}</button>
@@ -1428,6 +1586,22 @@ class ThemeSwitchEnginePanel extends HTMLElement {
     if (prioEl) this._draftRule.priority = parseInt(prioEl.value, 10) || 0;
     if (tDeskEl) this._draftRule.theme = tDeskEl.value;
     if (tMobEl) this._draftRule.theme_mobile = tMobEl.value;
+
+    const effEl = root.getElementById('mRuleEffect');
+    const effModeEl = root.getElementById('mRuleEffectMode');
+    const effCyclesEl = root.getElementById('mRuleEffectCycles');
+    const soundEl = root.getElementById('mRuleSoundFile');
+    const soundModeEl = root.getElementById('mRuleSoundMode');
+    const soundLoopsEl = root.getElementById('mRuleSoundLoops');
+    const soundVolEl = root.getElementById('mRuleSoundVolume');
+
+    if (effEl) this._draftRule.effect = effEl.value;
+    if (effModeEl) this._draftRule.effect_mode = effModeEl.value;
+    if (effCyclesEl) this._draftRule.effect_cycles = parseInt(effCyclesEl.value, 10) || 3;
+    if (soundEl) this._draftRule.sound_file = soundEl.value;
+    if (soundModeEl) this._draftRule.sound_mode = soundModeEl.value;
+    if (soundLoopsEl) this._draftRule.sound_loops = parseInt(soundLoopsEl.value, 10) || 3;
+    if (soundVolEl) this._draftRule.sound_volume = parseInt(soundVolEl.value, 10) ?? 50;
   }
 
   _attachEvents() {
@@ -1462,6 +1636,10 @@ class ThemeSwitchEnginePanel extends HTMLElement {
     const numDur = root.getElementById('numTransitionDuration');
     if (numDur) {
       numDur.onchange = () => this._saveConfig({ transition_duration: parseInt(numDur.value, 10) || 800 });
+    }
+    const txtSub = root.getElementById('txtMediaSubfolder');
+    if (txtSub) {
+      txtSub.onchange = () => this._saveConfig({ media_subfolder: txtSub.value.trim() || 'theme_sounds' });
     }
 
     // Rules enable/disable toggle
@@ -1513,6 +1691,10 @@ class ThemeSwitchEnginePanel extends HTMLElement {
     // Modal events
     if (this._showRuleModal && this._draftRule) {
       const closeModal = () => {
+        if (this._previewAudio) {
+          this._previewAudio.pause();
+          this._previewAudio = null;
+        }
         this._showRuleModal = false;
         this._draftRule = null;
         this._editingRuleIndex = null;
@@ -1699,11 +1881,96 @@ class ThemeSwitchEnginePanel extends HTMLElement {
         };
       });
 
+      // Effects & Sound inputs
+      const selEff = root.getElementById('mRuleEffect');
+      if (selEff) selEff.onchange = () => { this._draftRule.effect = selEff.value; };
+
+      const selEffMode = root.getElementById('mRuleEffectMode');
+      const inpEffCycles = root.getElementById('mRuleEffectCycles');
+      if (selEffMode) {
+        selEffMode.onchange = () => {
+          this._draftRule.effect_mode = selEffMode.value;
+          if (inpEffCycles) inpEffCycles.style.display = selEffMode.value === 'loop_count' ? '' : 'none';
+        };
+      }
+      if (inpEffCycles) {
+        inpEffCycles.oninput = () => { this._draftRule.effect_cycles = parseInt(inpEffCycles.value, 10) || 3; };
+      }
+
+      const selSound = root.getElementById('mRuleSoundFile');
+      if (selSound) {
+        selSound.onchange = () => {
+          this._draftRule.sound_file = selSound.value;
+          if (this._previewAudio) {
+            this._previewAudio.pause();
+            this._previewAudio = null;
+            const icon = root.getElementById('iconPreviewSound');
+            if (icon) icon.setAttribute('icon', 'mdi:play');
+          }
+        };
+      }
+
+      const btnPrev = root.getElementById('btnPreviewSound');
+      const iconPrev = root.getElementById('iconPreviewSound');
+      if (btnPrev) {
+        btnPrev.onclick = () => {
+          if (this._previewAudio && !this._previewAudio.paused) {
+            this._previewAudio.pause();
+            this._previewAudio = null;
+            if (iconPrev) iconPrev.setAttribute('icon', 'mdi:play');
+            return;
+          }
+          const sndFile = root.getElementById('mRuleSoundFile')?.value;
+          if (!sndFile || sndFile === 'none') return;
+          const mediaItem = (this._mediaFiles || []).find(f => f.filename === sndFile);
+          const url = mediaItem?.url || `/api/media_source/local_source/${this._data?.config?.media_subfolder || 'theme_sounds'}/${sndFile}`;
+          const vol = (parseInt(root.getElementById('mRuleSoundVolume')?.value, 10) ?? 50) / 100;
+          this._previewAudio = new Audio(url);
+          this._previewAudio.volume = Math.max(0, Math.min(1, vol));
+          if (iconPrev) iconPrev.setAttribute('icon', 'mdi:stop');
+          this._previewAudio.onended = () => {
+            if (iconPrev) iconPrev.setAttribute('icon', 'mdi:play');
+            this._previewAudio = null;
+          };
+          this._previewAudio.play().catch(() => {
+            if (iconPrev) iconPrev.setAttribute('icon', 'mdi:play');
+            this._previewAudio = null;
+          });
+        };
+      }
+
+      const selSoundMode = root.getElementById('mRuleSoundMode');
+      const inpSoundLoops = root.getElementById('mRuleSoundLoops');
+      if (selSoundMode) {
+        selSoundMode.onchange = () => {
+          this._draftRule.sound_mode = selSoundMode.value;
+          if (inpSoundLoops) inpSoundLoops.style.display = selSoundMode.value === 'loop_count' ? '' : 'none';
+        };
+      }
+      if (inpSoundLoops) {
+        inpSoundLoops.oninput = () => { this._draftRule.sound_loops = parseInt(inpSoundLoops.value, 10) || 3; };
+      }
+
+      const rngVol = root.getElementById('mRuleSoundVolume');
+      const lblVol = root.getElementById('lblVolumeVal');
+      if (rngVol) {
+        rngVol.oninput = () => {
+          const v = parseInt(rngVol.value, 10) || 0;
+          this._draftRule.sound_volume = v;
+          if (lblVol) lblVol.textContent = `${v}%`;
+          if (this._previewAudio) this._previewAudio.volume = v / 100;
+        };
+      }
+
       // Save rule
       const saveRuleBtn = root.getElementById('btnSaveRuleModal');
       if (saveRuleBtn) {
         saveRuleBtn.onclick = () => {
           this._syncDraftMetaFromInputs();
+          if (this._previewAudio) {
+            this._previewAudio.pause();
+            this._previewAudio = null;
+          }
           // Ensure weather custom inputs are flushed if user didn't blur before click
           root.querySelectorAll('.cond-weather-val').forEach(sel => {
             const cIdx = parseInt(sel.getAttribute('data-cidx'), 10);
@@ -1725,6 +1992,13 @@ class ThemeSwitchEnginePanel extends HTMLElement {
             theme_light: this._draftRule.theme || 'default',
             theme_dark: this._draftRule.theme || 'default',
             conditions: this._draftRule.conditions,
+            effect: this._draftRule.effect || 'none',
+            effect_mode: this._draftRule.effect_mode || 'loop_endless',
+            effect_cycles: parseInt(this._draftRule.effect_cycles, 10) || 3,
+            sound_file: this._draftRule.sound_file || 'none',
+            sound_mode: this._draftRule.sound_mode || 'play_once',
+            sound_loops: parseInt(this._draftRule.sound_loops, 10) || 3,
+            sound_volume: parseInt(this._draftRule.sound_volume, 10) ?? 50,
           };
           if (this._draftRule.theme_mobile) {
             newRule.theme_mobile_light = this._draftRule.theme_mobile;

@@ -15,7 +15,18 @@ from homeassistant.core import HomeAssistant, ServiceCall, callback
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.typing import ConfigType
 
-from .const import DOMAIN, MODE_FORCE_DARK, MODE_FORCE_DAY, MODE_FORCE_LIGHT, MODE_FORCE_NIGHT, MODES, PANEL_URL, STATIC_URL, VERSION
+from .const import (
+    DEFAULT_MEDIA_SUBFOLDER,
+    DOMAIN,
+    MODE_FORCE_DARK,
+    MODE_FORCE_DAY,
+    MODE_FORCE_LIGHT,
+    MODE_FORCE_NIGHT,
+    MODES,
+    PANEL_URL,
+    STATIC_URL,
+    VERSION,
+)
 from .coordinator import ThemeSwitchCoordinator
 
 try:
@@ -52,6 +63,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     websocket_api.async_register_command(hass, ws_rules_get)
     websocket_api.async_register_command(hass, ws_rules_save)
     websocket_api.async_register_command(hass, ws_config_save)
+    websocket_api.async_register_command(hass, ws_media_list)
     return True
 
 
@@ -223,6 +235,14 @@ def ws_rules_get(
             "sun": sun_info,
             "themes": get_available_themes(hass),
             "modes": MODES,
+            "effect": coordinator.active_effect,
+            "effect_mode": coordinator.active_effect_mode,
+            "effect_cycles": coordinator.active_effect_cycles,
+            "sound_file": coordinator.active_sound_file,
+            "sound_mode": coordinator.active_sound_mode,
+            "sound_loops": coordinator.active_sound_loops,
+            "sound_volume": coordinator.active_sound_volume,
+            "media_subfolder": coordinator.media_subfolder,
         },
     )
 
@@ -265,5 +285,68 @@ async def ws_config_save(
 
     await coordinator.async_update_config(msg["config"])
     connection.send_result(msg["id"], {"ok": True, "config": coordinator._config})
+
+
+AUDIO_EXTENSIONS = {".mp3", ".wav", ".ogg", ".m4a", ".aac", ".flac", ".weba"}
+
+
+@websocket_api.websocket_command(
+    {
+        vol.Required("type"): "theme_switch_engine/media/list",
+        vol.Optional("subfolder"): str,
+    }
+)
+@websocket_api.async_response
+async def ws_media_list(
+    hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]
+) -> None:
+    """Discover available audio files from /media or /config/www."""
+    coordinator = _get_coordinator(hass)
+    raw_sub = msg.get("subfolder")
+    subfolder = (raw_sub if raw_sub is not None else (coordinator.media_subfolder if coordinator else DEFAULT_MEDIA_SUBFOLDER)).strip().strip("/\\")
+
+    def _scan() -> list[dict[str, str]]:
+        found: dict[str, dict[str, str]] = {}
+        paths = [
+            Path("/media") / subfolder,
+            Path(hass.config.path("media", subfolder)),
+            Path(hass.config.path("media")),
+            Path("/media"),
+            Path(hass.config.path("www", subfolder)),
+            Path(hass.config.path("www", "sounds")),
+            Path(hass.config.path("www")),
+        ]
+
+        www_root = Path(hass.config.path("www")).resolve()
+
+        for p in paths:
+            try:
+                if not p.is_dir():
+                    continue
+                for f in p.iterdir():
+                    if f.is_file() and f.suffix.lower() in AUDIO_EXTENSIONS and f.name not in found:
+                        title = f.stem.replace("_", " ").replace("-", " ").title()
+                        f_res = f.resolve()
+                        if str(f_res).startswith(str(www_root)):
+                            rel = f_res.relative_to(www_root)
+                            url = f"/local/{rel.as_posix()}"
+                            source = "local"
+                        else:
+                            url = f"/api/media_source/local_source/{subfolder}/{f.name}" if subfolder else f"/api/media_source/local_source/{f.name}"
+                            source = "media"
+                        found[f.name] = {
+                            "filename": f.name,
+                            "title": title,
+                            "url": url,
+                            "source": source,
+                        }
+            except Exception as err:
+                _LOGGER.debug("Error scanning audio directory %s: %s", p, err)
+
+        return sorted(found.values(), key=lambda x: x["title"].lower())
+
+    files = await hass.async_add_executor_job(_scan)
+    connection.send_result(msg["id"], {"files": files, "subfolder": subfolder})
+
 
 

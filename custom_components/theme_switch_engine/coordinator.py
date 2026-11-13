@@ -23,12 +23,14 @@ from .const import (
     CONF_DEFAULT_THEME_MOBILE_LIGHT,
     CONF_DEFAULT_THEME_MOBILE_NIGHT,
     CONF_DEFAULT_THEME_NIGHT,
+    CONF_MEDIA_SUBFOLDER,
     CONF_RULES,
     CONF_SHOW_SIDEBAR,
     CONF_SUN_ELEVATION_THRESHOLD,
     CONF_TRANSITION_DURATION,
     CONF_TRANSITION_ENABLED,
     CONF_WEATHER_ENTITY,
+    DEFAULT_MEDIA_SUBFOLDER,
     DEFAULT_SHOW_SIDEBAR,
     DEFAULT_SUN_ELEVATION_THRESHOLD,
     DEFAULT_THEME_DARK,
@@ -39,6 +41,7 @@ from .const import (
     DEFAULT_TRANSITION_ENABLED,
     DOMAIN,
     MODE_AUTO,
+    MODE_DEFAULT,
     MODE_FORCE_DARK,
     MODE_FORCE_DAY,
     MODE_FORCE_LIGHT,
@@ -79,6 +82,15 @@ class ThemeSwitchCoordinator:
         self.preview_active: bool = False
         self._preview_task: asyncio.Task | None = None
         self._entity_unsub: CALLBACK_TYPE | None = None
+
+        # Effects and Sound state
+        self.active_effect: str | None = None
+        self.active_effect_mode: str = "loop_endless"
+        self.active_effect_cycles: int = 3
+        self.active_sound_file: str | None = None
+        self.active_sound_mode: str = "play_once"
+        self.active_sound_loops: int = 3
+        self.active_sound_volume: int = 50
 
     async def async_setup(self) -> None:
         """Load stored config, register event hooks and perform initial evaluation."""
@@ -146,6 +158,7 @@ class ThemeSwitchCoordinator:
             CONF_SUN_ELEVATION_THRESHOLD: DEFAULT_SUN_ELEVATION_THRESHOLD,
             CONF_WEATHER_ENTITY: None,
             CONF_SHOW_SIDEBAR: DEFAULT_SHOW_SIDEBAR,
+            CONF_MEDIA_SUBFOLDER: DEFAULT_MEDIA_SUBFOLDER,
             CONF_RULES: [
                 {
                     "id": "rule_christmas",
@@ -244,6 +257,10 @@ class ThemeSwitchCoordinator:
     def elevation_threshold(self) -> float:
         return float(self._config.get(CONF_SUN_ELEVATION_THRESHOLD, DEFAULT_SUN_ELEVATION_THRESHOLD))
 
+    @property
+    def media_subfolder(self) -> str:
+        return str(self._config.get(CONF_MEDIA_SUBFOLDER, DEFAULT_MEDIA_SUBFOLDER) or DEFAULT_MEDIA_SUBFOLDER)
+
     def _get_referenced_entities(self) -> set[str]:
         """Extract all entity IDs referenced by rules."""
         eids: set[str] = set()
@@ -326,6 +343,13 @@ class ThemeSwitchCoordinator:
         target_priority: int = 0
         target_variant: str = "light" if day else "dark"
         matched_conds: list[str] = []
+        target_effect: str | None = None
+        target_effect_mode: str = "loop_endless"
+        target_effect_cycles: int = 3
+        target_sound_file: str | None = None
+        target_sound_mode: str = "play_once"
+        target_sound_loops: int = 3
+        target_sound_volume: int = 50
 
         if self.mode == MODE_PAUSED:
             _LOGGER.debug("Theme Switch Engine is paused. Skipping evaluation.")
@@ -344,6 +368,12 @@ class ThemeSwitchCoordinator:
             target_rule_name = "Force Dark"
             target_variant = "dark"
             matched_conds = ["mode=force_dark"]
+        elif self.mode == MODE_DEFAULT:
+            target_theme_desktop = "default"
+            target_theme_mobile = "default"
+            target_rule_name = "Home Assistant Default"
+            target_variant = "light" if day else "dark"
+            matched_conds = ["mode=default"]
         else:
             # MODE_AUTO: Evaluate rules top-down by priority
             for rule in self.rules:
@@ -363,6 +393,29 @@ class ThemeSwitchCoordinator:
                     target_rule_name = rule.get("name") or "Unnamed Rule"
                     target_priority = int(rule.get("priority", 0))
                     matched_conds = cond_names
+
+                    # Visual effect and sound settings
+                    raw_eff = rule.get("effect")
+                    if raw_eff and raw_eff != "none":
+                        target_effect = raw_eff
+                        target_effect_mode = rule.get("effect_mode", "loop_endless")
+                        try:
+                            target_effect_cycles = int(rule.get("effect_cycles", 3))
+                        except (ValueError, TypeError):
+                            target_effect_cycles = 3
+
+                    raw_sound = rule.get("sound_file")
+                    if raw_sound and raw_sound != "none":
+                        target_sound_file = raw_sound
+                        target_sound_mode = rule.get("sound_mode", "play_once")
+                        try:
+                            target_sound_loops = int(rule.get("sound_loops", 3))
+                        except (ValueError, TypeError):
+                            target_sound_loops = 3
+                        try:
+                            target_sound_volume = int(rule.get("sound_volume", 50))
+                        except (ValueError, TypeError):
+                            target_sound_volume = 50
 
                     theme_light = rule.get("theme_light") or rule.get("theme_day")
                     theme_dark = rule.get("theme_dark") or rule.get("theme_night")
@@ -424,6 +477,13 @@ class ThemeSwitchCoordinator:
         self.active_priority = target_priority
         self.day_night_variant = target_variant
         self.matched_conditions = matched_conds
+        self.active_effect = target_effect
+        self.active_effect_mode = target_effect_mode
+        self.active_effect_cycles = target_effect_cycles
+        self.active_sound_file = target_sound_file
+        self.active_sound_mode = target_sound_mode
+        self.active_sound_loops = target_sound_loops
+        self.active_sound_volume = target_sound_volume
 
         if theme_changed:
             self.last_switch = now_dt.strftime("%Y-%m-%d %H:%M:%S")
@@ -451,6 +511,14 @@ class ThemeSwitchCoordinator:
                 "day_night_variant": self.day_night_variant,
                 "transition_enabled": self.transition_enabled,
                 "transition_duration": self.transition_duration,
+                "effect": self.active_effect,
+                "effect_mode": self.active_effect_mode,
+                "effect_cycles": self.active_effect_cycles,
+                "sound_file": self.active_sound_file,
+                "sound_mode": self.active_sound_mode,
+                "sound_loops": self.active_sound_loops,
+                "sound_volume": self.active_sound_volume,
+                "media_subfolder": self.media_subfolder,
             },
         )
 

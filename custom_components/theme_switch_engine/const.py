@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 DOMAIN = "theme_switch_engine"
-VERSION = "1.3.2"
+VERSION = "1.4.0"
 
 STORAGE_KEY = "theme_switch_engine.config"
 STORAGE_VERSION = 1
@@ -24,6 +24,16 @@ CONF_TRANSITION_DURATION = "transition_duration"
 CONF_SUN_ELEVATION_THRESHOLD = "sun_elevation_threshold"
 CONF_WEATHER_ENTITY = "weather_entity"
 CONF_SHOW_SIDEBAR = "show_sidebar"
+CONF_MEDIA_SUBFOLDER = "media_subfolder"
+DEFAULT_MEDIA_SUBFOLDER = "theme_sounds"
+
+CONF_EFFECT = "effect"
+CONF_EFFECT_MODE = "effect_mode"
+CONF_EFFECT_CYCLES = "effect_cycles"
+CONF_SOUND_FILE = "sound_file"
+CONF_SOUND_MODE = "sound_mode"
+CONF_SOUND_LOOPS = "sound_loops"
+CONF_SOUND_VOLUME = "sound_volume"
 
 PANEL_URL = "theme-switch-engine"
 STATIC_URL = "/theme_switch_engine_static"
@@ -46,11 +56,12 @@ DEFAULT_SHOW_SIDEBAR = True
 MODE_AUTO = "Auto (Engine)"
 MODE_FORCE_LIGHT = "Force Light"
 MODE_FORCE_DARK = "Force Dark"
+MODE_DEFAULT = "Home Assistant Default"
 MODE_PAUSED = "Paused"
 # Legacy mode aliases
 MODE_FORCE_DAY = "Force Day"
 MODE_FORCE_NIGHT = "Force Night"
-MODES = [MODE_AUTO, MODE_FORCE_LIGHT, MODE_FORCE_DARK, MODE_PAUSED]
+MODES = [MODE_AUTO, MODE_FORCE_LIGHT, MODE_FORCE_DARK, MODE_DEFAULT, MODE_PAUSED]
 
 # Supported condition types
 COND_SUN = "sun"

@@ -74,5 +74,13 @@ class ThemeSwitchEngineActiveSensor(SensorEntity):
             "transition_enabled": self._coordinator.transition_enabled,
             "transition_duration_ms": self._coordinator.transition_duration,
             "rules_count": len(self._coordinator.rules),
+            "effect": self._coordinator.active_effect,
+            "effect_mode": self._coordinator.active_effect_mode,
+            "effect_cycles": self._coordinator.active_effect_cycles,
+            "sound_file": self._coordinator.active_sound_file,
+            "sound_mode": self._coordinator.active_sound_mode,
+            "sound_loops": self._coordinator.active_sound_loops,
+            "sound_volume": self._coordinator.active_sound_volume,
+            "media_subfolder": self._coordinator.media_subfolder,
         }
 
