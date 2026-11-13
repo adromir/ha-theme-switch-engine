@@ -41,12 +41,15 @@ _LOGGER = logging.getLogger(__name__)
 
 def get_available_themes(hass: Any) -> list[str]:
     """Return all themes currently installed in Home Assistant."""
-    themes = ["default", "Vision Glass Light", "Vision Glass Dark", "Vision Glass"]
+    themes: list[str] = ["default"]
     try:
         frontend_themes = hass.data.get("frontend_themes")
-        if frontend_themes and hasattr(frontend_themes, "themes"):
-            found = list(frontend_themes.themes.keys())
-            for t in found:
+        if frontend_themes and hasattr(frontend_themes, "themes") and isinstance(frontend_themes.themes, dict):
+            for t in frontend_themes.themes.keys():
+                if t not in themes:
+                    themes.append(t)
+        elif isinstance(frontend_themes, dict):
+            for t in frontend_themes.keys():
                 if t not in themes:
                     themes.append(t)
     except Exception:  # noqa: BLE001
@@ -114,7 +117,6 @@ class ThemeSwitchOptionsFlow(config_entries.OptionsFlow):
         cur_dur = coordinator.transition_duration if coordinator else DEFAULT_TRANSITION_DURATION
         cur_elev = coordinator.elevation_threshold if coordinator else DEFAULT_SUN_ELEVATION_THRESHOLD
         cur_w = coordinator.weather_entity if coordinator else None
-        cur_glass = coordinator.glassmorphism_enabled if coordinator else DEFAULT_GLASSMORPHISM_ENABLED
         cur_sb = coordinator.show_sidebar if coordinator else DEFAULT_SHOW_SIDEBAR
 
         schema = vol.Schema({
@@ -126,7 +128,6 @@ class ThemeSwitchOptionsFlow(config_entries.OptionsFlow):
             vol.Optional(CONF_WEATHER_ENTITY, description={"suggested_value": cur_w}): selector.EntitySelector(
                 selector.EntitySelectorConfig(domain="weather")
             ),
-            vol.Optional(CONF_GLASSMORPHISM_ENABLED, default=cur_glass): bool,
             vol.Optional(CONF_TRANSITION_ENABLED, default=cur_trans): bool,
             vol.Optional(CONF_TRANSITION_DURATION, default=cur_dur): int,
             vol.Optional(CONF_SUN_ELEVATION_THRESHOLD, default=cur_elev): float,

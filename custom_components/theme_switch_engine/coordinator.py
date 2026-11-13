@@ -19,14 +19,12 @@ from .const import (
     CONF_DEFAULT_THEME_MOBILE_DAY,
     CONF_DEFAULT_THEME_MOBILE_NIGHT,
     CONF_DEFAULT_THEME_NIGHT,
-    CONF_GLASSMORPHISM_ENABLED,
     CONF_RULES,
     CONF_SHOW_SIDEBAR,
     CONF_SUN_ELEVATION_THRESHOLD,
     CONF_TRANSITION_DURATION,
     CONF_TRANSITION_ENABLED,
     CONF_WEATHER_ENTITY,
-    DEFAULT_GLASSMORPHISM_ENABLED,
     DEFAULT_SHOW_SIDEBAR,
     DEFAULT_SUN_ELEVATION_THRESHOLD,
     DEFAULT_THEME_DAY,
@@ -133,7 +131,6 @@ class ThemeSwitchCoordinator:
             CONF_TRANSITION_DURATION: DEFAULT_TRANSITION_DURATION,
             CONF_SUN_ELEVATION_THRESHOLD: DEFAULT_SUN_ELEVATION_THRESHOLD,
             CONF_WEATHER_ENTITY: None,
-            CONF_GLASSMORPHISM_ENABLED: DEFAULT_GLASSMORPHISM_ENABLED,
             CONF_SHOW_SIDEBAR: DEFAULT_SHOW_SIDEBAR,
             CONF_RULES: [
                 {
@@ -192,10 +189,6 @@ class ThemeSwitchCoordinator:
     @property
     def default_theme_mobile_night(self) -> str:
         return self._config.get(CONF_DEFAULT_THEME_MOBILE_NIGHT, self.default_theme_night)
-
-    @property
-    def glassmorphism_enabled(self) -> bool:
-        return bool(self._config.get(CONF_GLASSMORPHISM_ENABLED, DEFAULT_GLASSMORPHISM_ENABLED))
 
     @property
     def show_sidebar(self) -> bool:
@@ -407,7 +400,6 @@ class ThemeSwitchCoordinator:
                 "priority": self.active_priority,
                 "mode": self.mode,
                 "day_night_variant": self.day_night_variant,
-                "glassmorphism_enabled": self.glassmorphism_enabled,
                 "transition_enabled": self.transition_enabled,
                 "transition_duration": self.transition_duration,
             },

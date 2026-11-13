@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 DOMAIN = "theme_switch_engine"
-VERSION = "1.1.0"
+VERSION = "1.2.0"
 
 STORAGE_KEY = "theme_switch_engine.config"
 STORAGE_VERSION = 1
@@ -17,20 +17,18 @@ CONF_TRANSITION_ENABLED = "transition_enabled"
 CONF_TRANSITION_DURATION = "transition_duration"
 CONF_SUN_ELEVATION_THRESHOLD = "sun_elevation_threshold"
 CONF_WEATHER_ENTITY = "weather_entity"
-CONF_GLASSMORPHISM_ENABLED = "glassmorphism_enabled"
 CONF_SHOW_SIDEBAR = "show_sidebar"
 
 PANEL_URL = "theme-switch-engine"
 STATIC_URL = "/theme_switch_engine_static"
 
-DEFAULT_THEME_DAY = "Vision Glass Light"
-DEFAULT_THEME_NIGHT = "Vision Glass Dark"
-DEFAULT_THEME_MOBILE_DAY = "Vision Glass Light"
-DEFAULT_THEME_MOBILE_NIGHT = "Vision Glass Dark"
+DEFAULT_THEME_DAY = "default"
+DEFAULT_THEME_NIGHT = "default"
+DEFAULT_THEME_MOBILE_DAY = "default"
+DEFAULT_THEME_MOBILE_NIGHT = "default"
 DEFAULT_TRANSITION_ENABLED = True
 DEFAULT_TRANSITION_DURATION = 800  # milliseconds
 DEFAULT_SUN_ELEVATION_THRESHOLD = 0.0
-DEFAULT_GLASSMORPHISM_ENABLED = True
 DEFAULT_SHOW_SIDEBAR = True
 
 MODE_AUTO = "Auto (Engine)"

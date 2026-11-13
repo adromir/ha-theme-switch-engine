@@ -104,7 +104,11 @@ class ThemeSwitchEnginePanel extends HTMLElement {
     const d = this._data;
     const cfg = d.config || {};
     const rules = d.rules || [];
-    const themes = d.themes || ['default'];
+    const themes = Array.from(new Set([
+      'default',
+      ...(d.themes || []),
+      ...Object.keys(this._hass?.themes?.themes || {})
+    ])).sort();
     const modes = d.modes || ['Auto (Engine)', 'Force Day', 'Force Night', 'Paused'];
     const isMobile = this._isMobileClient();
 
@@ -345,9 +349,9 @@ class ThemeSwitchEnginePanel extends HTMLElement {
             <div class="card-sub">Status: ${d.sun?.state || 'unknown'}</div>
           </div>
           <div class="card">
-            <div class="card-label">Glasmorphismus & Effekte</div>
-            <div class="card-val">${cfg.glassmorphism_enabled !== false ? 'Aktiviert' : 'Deaktiviert'}</div>
-            <div class="card-sub">Übergang: ${cfg.transition_duration || 800}ms</div>
+            <div class="card-label">Live-Übergang</div>
+            <div class="card-val">${cfg.transition_enabled !== false ? 'Aktiviert' : 'Deaktiviert'}</div>
+            <div class="card-sub">Dauer: ${cfg.transition_duration || 800}ms</div>
           </div>
         </div>
 
@@ -449,10 +453,6 @@ class ThemeSwitchEnginePanel extends HTMLElement {
         <div class="card" style="margin-top:30px;">
           <div style="font-weight:700;font-size:15px;margin-bottom:14px;">Erweiterte Engine-Einstellungen</div>
           <div style="display:flex;flex-direction:column;gap:12px;">
-            <label style="display:flex;align-items:center;gap:10px;font-size:13px;cursor:pointer;">
-              <input type="checkbox" id="chkGlassmorphism" ${cfg.glassmorphism_enabled !== false ? 'checked' : ''}>
-              <span><strong>Native Glasmorphismus-Funktion aktivieren</strong> (Milchglas-Seitenleiste, animierter Hintergrund, weiche Karten ohne card-mod)</span>
-            </label>
             <label style="display:flex;align-items:center;gap:10px;font-size:13px;cursor:pointer;">
               <input type="checkbox" id="chkTransition" ${cfg.transition_enabled !== false ? 'checked' : ''}>
               <span><strong>Weichen Live-Übergangseffekt aktivieren</strong></span>
@@ -569,11 +569,7 @@ class ThemeSwitchEnginePanel extends HTMLElement {
       }
     });
 
-    // Toggles for glassmorphism, transition, sidebar
-    const chkGlass = root.getElementById('chkGlassmorphism');
-    if (chkGlass) {
-      chkGlass.onchange = () => this._saveConfig({ glassmorphism_enabled: chkGlass.checked });
-    }
+    // Toggles for transition, sidebar
     const chkTrans = root.getElementById('chkTransition');
     if (chkTrans) {
       chkTrans.onchange = () => this._saveConfig({ transition_enabled: chkTrans.checked });

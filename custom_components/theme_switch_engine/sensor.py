@@ -70,7 +70,6 @@ class ThemeSwitchEngineActiveSensor(SensorEntity):
             "last_switch": self._coordinator.last_switch,
             "matched_conditions": self._coordinator.matched_conditions,
             "preview_active": self._coordinator.preview_active,
-            "glassmorphism_enabled": self._coordinator.glassmorphism_enabled,
             "transition_enabled": self._coordinator.transition_enabled,
             "transition_duration_ms": self._coordinator.transition_duration,
             "rules_count": len(self._coordinator.rules),

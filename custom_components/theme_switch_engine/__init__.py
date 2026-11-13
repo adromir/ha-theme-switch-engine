@@ -31,11 +31,15 @@ FRONTEND_DIR = Path(__file__).parent / "frontend"
 
 def get_available_themes(hass: HomeAssistant) -> list[str]:
     """Return all themes currently installed in Home Assistant."""
-    themes = ["default", "Vision Glass Light", "Vision Glass Dark", "Vision Glass"]
+    themes: list[str] = ["default"]
     try:
         frontend_themes = hass.data.get("frontend_themes")
-        if frontend_themes and hasattr(frontend_themes, "themes"):
-            for t in list(frontend_themes.themes.keys()):
+        if frontend_themes and hasattr(frontend_themes, "themes") and isinstance(frontend_themes.themes, dict):
+            for t in frontend_themes.themes.keys():
+                if t not in themes:
+                    themes.append(t)
+        elif isinstance(frontend_themes, dict):
+            for t in frontend_themes.keys():
                 if t not in themes:
                     themes.append(t)
     except Exception:  # noqa: BLE001
@@ -209,7 +213,6 @@ def ws_rules_get(
             "priority": coordinator.active_priority,
             "day_night_variant": coordinator.day_night_variant,
             "matched_conditions": coordinator.matched_conditions,
-            "glassmorphism_enabled": coordinator.glassmorphism_enabled,
             "transition_enabled": coordinator.transition_enabled,
             "transition_duration": coordinator.transition_duration,
             "sun": sun_info,
