@@ -1,0 +1,27 @@
+{
+  "name": "ha-theme-switch-engine",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Universal, hierarchical rule-based theme switching engine for Home Assistant with sun, weather, date, schedule and transition support",
+  "scripts": {
+    "test": "python -m unittest discover -s tests",
+    "release": "node scripts/release.js"
+  },
+  "keywords": [
+    "home-assistant",
+    "theme",
+    "theme-switcher",
+    "hacs",
+    "integration"
+  ],
+  "author": "Adromir",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/adromir/ha-theme-switch-engine.git"
+  },
+  "bugs": {
+    "url": "https://github.com/adromir/ha-theme-switch-engine/issues"
+  },
+  "homepage": "https://github.com/adromir/ha-theme-switch-engine#readme"
+}

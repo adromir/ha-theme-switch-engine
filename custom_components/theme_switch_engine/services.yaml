@@ -1,0 +1,49 @@
+evaluate:
+  name: Evaluate Rules
+  description: Force immediate evaluation of all theme switching rules.
+  fields:
+    force:
+      name: Force
+      description: Force evaluation even if temporary preview mode is active.
+      example: true
+      selector:
+        boolean:
+
+set_mode:
+  name: Set Engine Mode
+  description: Change operational mode between Auto, Force Day, Force Night, and Paused.
+  fields:
+    mode:
+      name: Mode
+      description: Operational mode to set.
+      required: true
+      example: "Auto (Engine)"
+      selector:
+        select:
+          options:
+            - "Auto (Engine)"
+            - "Force Day"
+            - "Force Night"
+            - "Paused"
+
+preview_theme:
+  name: Preview Theme
+  description: Temporarily preview a theme live for a specified duration in seconds before reverting.
+  fields:
+    theme:
+      name: Theme Name
+      description: Name of the theme to preview.
+      required: true
+      example: "Vision Glass Dark"
+      selector:
+        text:
+    duration:
+      name: Duration
+      description: Seconds to keep preview active before reverting.
+      default: 15
+      example: 20
+      selector:
+        number:
+          min: 1
+          max: 300
+          unit_of_measurement: seconds

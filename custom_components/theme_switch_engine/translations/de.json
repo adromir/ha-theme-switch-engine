@@ -1,0 +1,38 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Theme Switch Engine einrichten",
+        "description": "Konfiguriere die universelle, hierarchische Theme-Wechsel-Engine für Home Assistant.",
+        "data": {
+          "mode": "Betriebsmodus",
+          "default_theme_day": "Standard Tag-Theme",
+          "default_theme_night": "Standard Nacht-Theme",
+          "weather_entity": "Wetter-Entität (optional)",
+          "transition_enabled": "Weichen Live-Übergangseffekt aktivieren",
+          "transition_duration": "Übergangsdauer (ms)"
+        }
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "Theme Switch Engine ist bereits eingerichtet."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Theme Switch Engine Optionen",
+        "description": "Passe Betriebsmodus, Fallback-Themes und den Live-Übergangseffekt an.",
+        "data": {
+          "mode": "Betriebsmodus",
+          "default_theme_day": "Standard Tag-Theme",
+          "default_theme_night": "Standard Nacht-Theme",
+          "weather_entity": "Wetter-Entität (optional)",
+          "transition_enabled": "Weichen Live-Übergangseffekt aktivieren",
+          "transition_duration": "Übergangsdauer (ms)",
+          "sun_elevation_threshold": "Sonnen-Elevationsgrenze (Grad)"
+        }
+      }
+    }
+  }
+}

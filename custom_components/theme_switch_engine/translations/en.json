@@ -1,0 +1,38 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Set up Theme Switch Engine",
+        "description": "Configure the universal hierarchical theme switching engine for Home Assistant.",
+        "data": {
+          "mode": "Operational Mode",
+          "default_theme_day": "Default Daytime Theme",
+          "default_theme_night": "Default Nighttime Theme",
+          "weather_entity": "Weather Entity (optional)",
+          "transition_enabled": "Enable Smooth Live Transition Effect",
+          "transition_duration": "Transition Duration (ms)"
+        }
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "Theme Switch Engine is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Theme Switch Engine Options",
+        "description": "Configure active mode, fallback themes, and live transition effect.",
+        "data": {
+          "mode": "Operational Mode",
+          "default_theme_day": "Default Daytime Theme",
+          "default_theme_night": "Default Nighttime Theme",
+          "weather_entity": "Weather Entity (optional)",
+          "transition_enabled": "Enable Smooth Live Transition Effect",
+          "transition_duration": "Transition Duration (ms)",
+          "sun_elevation_threshold": "Sun Elevation Threshold (degrees)"
+        }
+      }
+    }
+  }
+}

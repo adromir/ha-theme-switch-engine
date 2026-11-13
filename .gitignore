@@ -1,0 +1,10 @@
+MEMORY.md
+PROJECT_CONTEXT.md
+.token
+.DS_Store
+Thumbs.db
+__pycache__/
+*.py[cod]
+*$py.class
+node_modules/
+.pytest_cache/
