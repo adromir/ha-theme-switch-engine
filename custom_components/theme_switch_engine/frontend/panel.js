@@ -1396,9 +1396,6 @@ class ThemeSwitchEnginePanel extends HTMLElement {
                   <td>${this._escapeHtml(deskTheme)}</td>
                   <td>${this._escapeHtml(mobTheme)}</td>
                   <td style="text-align:right;white-space:nowrap;">
-                    <button class="btn btn-preview-rule" data-theme="${this._escapeHtml(r.theme || tLight || tDark || '')}" title="${this._t('preview_tooltip')}" style="padding:4px 8px;">
-                      <ha-icon icon="mdi:eye" style="--mdc-icon-size:14px;"></ha-icon>
-                    </button>
                     <button class="btn btn-edit-rule" data-idx="${idx}" title="${this._t('edit_tooltip')}" style="padding:4px 8px;">
                       <ha-icon icon="mdi:pencil" style="--mdc-icon-size:14px;"></ha-icon>
                     </button>
@@ -1671,14 +1668,6 @@ class ThemeSwitchEnginePanel extends HTMLElement {
           rList.splice(idx, 1);
           this._saveRules(rList);
         }
-      };
-    });
-
-    // Preview rule button
-    root.querySelectorAll('.btn-preview-rule').forEach(btn => {
-      btn.onclick = () => {
-        const t = btn.getAttribute('data-theme');
-        if (t) this._preview(t);
       };
     });
 
