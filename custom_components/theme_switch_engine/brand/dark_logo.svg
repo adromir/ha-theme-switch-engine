@@ -1,0 +1,21 @@
+<svg width="1024" height="320" viewBox="0 0 1024 320" xmlns="http://www.w3.org/2000/svg">
+  <g transform="translate(24, -16) scale(0.68)">
+    <g fill="#f8fafc" stroke="#f8fafc" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Palette Outline -->
+    <path d="M 256 72 C 146 72, 64 154, 64 264 C 64 340, 114 394, 184 394 C 206 394, 216 380, 216 364 C 216 350, 208 340, 208 322 C 208 296, 230 274, 256 274 L 284 274 C 364 274, 448 206, 448 126 C 448 86, 400 72, 256 72 Z" fill="none" stroke-width="20" />
+    <!-- Day Sun & Night Moon in Palette Swatches -->
+    <circle cx="160" cy="180" r="22" fill="#f8fafc" stroke="none" />
+    <circle cx="236" cy="144" r="20" fill="#f8fafc" stroke="none" />
+    <circle cx="320" cy="144" r="20" fill="#f8fafc" stroke="none" />
+    <path d="M 320 340 A 64 64 0 1 1 396 432 A 76 76 0 0 0 320 340 Z" fill="#f8fafc" stroke="none" />
+  </g>
+  </g>
+  <g transform="translate(370, 96)">
+    <text x="0" y="52" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="64" font-weight="700" fill="#ffffff" letter-spacing="-1">
+      Theme Switch <tspan fill="#38bdf8">Engine</tspan>
+    </text>
+    <text x="0" y="102" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="22" font-weight="500" fill="#cbd5e1" letter-spacing="0.5">
+      Hierarchical Theme Automation for Home Assistant
+    </text>
+  </g>
+</svg>

@@ -51,7 +51,10 @@ const TRANSLATIONS = {
     advanced_settings: 'Advanced Engine Settings',
     enable_transition: 'Enable smooth live transition effect',
     transition_duration: 'Transition duration:',
-    show_sidebar: 'Show in Home Assistant sidebar',
+    unsaved_changes: 'Unsaved changes',
+    discard: 'Discard',
+    save: 'Save',
+    confirm_unsaved_leave: 'You have unsaved changes. Do you really want to discard them and leave?',
     modal_create_title: 'Create New Theme Rule',
     modal_edit_title: 'Edit Theme Rule',
     rule_name_label: 'Rule Name',
@@ -93,7 +96,7 @@ const TRANSLATIONS = {
     cond_prefix_tides: 'Tides',
     weather_entity_label: 'Weather Entity',
     weather_global_default: 'Global Default Weather Entity',
-    weather_states_label: 'Weather Conditions (select one or more)',
+    weather_states_label: 'Weather Condition',
     weather_custom_label: 'Custom Weather State (optional)',
     time_after: 'From (After)',
     time_before: 'Until (Before)',
@@ -228,7 +231,10 @@ const TRANSLATIONS = {
     advanced_settings: 'Erweiterte Engine-Einstellungen',
     enable_transition: 'Weichen Live-Übergangseffekt aktivieren',
     transition_duration: 'Übergangsdauer:',
-    show_sidebar: 'In Home Assistant Seitenleiste anzeigen',
+    unsaved_changes: 'Ungespeicherte Änderungen',
+    discard: 'Verwerfen',
+    save: 'Speichern',
+    confirm_unsaved_leave: 'Es gibt ungespeicherte Änderungen. Möchtest du diese wirklich verwerfen und die Ansicht verlassen?',
     modal_create_title: 'Neue Theme-Regel erstellen',
     modal_edit_title: 'Theme-Regel bearbeiten',
     rule_name_label: 'Regel-Name',
@@ -270,7 +276,7 @@ const TRANSLATIONS = {
     cond_prefix_tides: 'Gezeiten',
     weather_entity_label: 'Wetter-Entität',
     weather_global_default: 'Globale Standard-Wetter-Entität',
-    weather_states_label: 'Wetterzustände (einen oder mehrere wählen)',
+    weather_states_label: 'Wetterzustand',
     weather_custom_label: 'Eigener Wetterzustand (optional)',
     time_after: 'Von (Uhrzeit)',
     time_before: 'Bis (Uhrzeit)',
@@ -405,7 +411,10 @@ const TRANSLATIONS = {
     advanced_settings: 'Pengaturan Lanjutan Engine',
     enable_transition: 'Aktifkan efek transisi langsung yang halus',
     transition_duration: 'Durasi transisi:',
-    show_sidebar: 'Tampilkan di bilah samping Home Assistant',
+    unsaved_changes: 'Perubahan belum disimpan',
+    discard: 'Buang',
+    save: 'Simpan',
+    confirm_unsaved_leave: 'Ada perubahan yang belum disimpan. Apakah Anda yakin ingin membuangnya dan keluar?',
     modal_create_title: 'Buat Aturan Tema Baru',
     modal_edit_title: 'Ubah Aturan Tema',
     rule_name_label: 'Nama Aturan',
@@ -447,7 +456,7 @@ const TRANSLATIONS = {
     cond_prefix_tides: 'Pasang Surut',
     weather_entity_label: 'Entitas Cuaca',
     weather_global_default: 'Entitas Cuaca Default Global',
-    weather_states_label: 'Kondisi Cuaca (pilih satu atau lebih)',
+    weather_states_label: 'Kondisi Cuaca',
     weather_custom_label: 'Status Cuaca Kustom (opsional)',
     time_after: 'Dari (Setelah)',
     time_before: 'Sampai (Sebelum)',
@@ -1577,6 +1586,22 @@ class ThemeSwitchEnginePanel extends HTMLElement {
             </div>
           </div>
         </div>
+
+        <!-- Floating Vanilla HA Save Bar -->
+        <div id="panelSaveBar" style="position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:99999;background:var(--ha-card-background, var(--card-background-color, #1e293b));border:1px solid var(--primary-color, #38bdf8);box-shadow:0 12px 36px rgba(0,0,0,0.5);border-radius:12px;padding:12px 24px;display:${this._isDirty ? 'flex' : 'none'};justify-content:space-between;align-items:center;gap:20px;">
+          <span style="font-weight:600;font-size:13px;color:var(--primary-text-color,#fff);display:flex;align-items:center;gap:8px;">
+            <ha-icon icon="mdi:alert-circle-outline" style="--mdc-icon-size:20px;color:#f59e0b;"></ha-icon>
+            ${this._t('unsaved_changes')}
+          </span>
+          <div style="display:flex;gap:10px;">
+            <button type="button" class="btn" id="btnDiscardConfig" style="cursor:pointer;padding:7px 16px;border-radius:8px;font-weight:600;">
+              ${this._t('discard')}
+            </button>
+            <button type="button" class="btn btn-primary" id="btnSaveConfig" style="background:var(--primary-color, #0284c7);color:white;border:none;cursor:pointer;padding:7px 20px;border-radius:8px;font-weight:700;display:inline-flex;align-items:center;gap:6px;">
+              <ha-icon icon="mdi:content-save" style="--mdc-icon-size:16px;"></ha-icon> ${this._t('save')}
+            </button>
+          </div>
+        </div>
       </div>
 
       <!-- Create/Edit Rule Modal -->
@@ -1766,33 +1791,60 @@ class ThemeSwitchEnginePanel extends HTMLElement {
       selMode.onchange = () => this._setMode(selMode.value);
     }
 
-    // Default themes change
+    // Vanilla HA Dirty tracking & Save Bar
+    if (!this._boundBeforeUnload) {
+      this._boundBeforeUnload = (e) => {
+        if (this._isDirty) {
+          e.preventDefault();
+          e.returnValue = '';
+        }
+      };
+      window.addEventListener('beforeunload', this._boundBeforeUnload);
+    }
+
+    const markDirty = () => {
+      this._isDirty = true;
+      const bar = root.getElementById('panelSaveBar');
+      if (bar) bar.style.display = 'flex';
+    };
+
     ['selDefLight', 'selDefDark', 'selDefMobLight', 'selDefMobDark'].forEach(id => {
       const el = root.getElementById(id);
-      if (el) {
-        el.onchange = () => {
-          this._saveConfig({
-            default_theme_light: root.getElementById('selDefLight')?.value,
-            default_theme_dark: root.getElementById('selDefDark')?.value,
-            default_theme_mobile_light: root.getElementById('selDefMobLight')?.value,
-            default_theme_mobile_dark: root.getElementById('selDefMobDark')?.value,
-          });
-        };
-      }
+      if (el) el.onchange = markDirty;
     });
 
-    // Toggles for transition, sidebar
     const chkTrans = root.getElementById('chkTransition');
-    if (chkTrans) {
-      chkTrans.onchange = () => this._saveConfig({ transition_enabled: chkTrans.checked });
-    }
+    if (chkTrans) chkTrans.onchange = markDirty;
     const numDur = root.getElementById('numTransitionDuration');
-    if (numDur) {
-      numDur.onchange = () => this._saveConfig({ transition_duration: parseInt(numDur.value, 10) || 800 });
-    }
+    if (numDur) numDur.oninput = markDirty;
     const txtSub = root.getElementById('txtMediaSubfolder');
-    if (txtSub) {
-      txtSub.onchange = () => this._saveConfig({ media_subfolder: txtSub.value.trim() || 'theme_sounds' });
+    if (txtSub) txtSub.oninput = markDirty;
+
+    const btnDiscard = root.getElementById('btnDiscardConfig');
+    if (btnDiscard) {
+      btnDiscard.onclick = () => {
+        this._isDirty = false;
+        this._render();
+      };
+    }
+
+    const btnSave = root.getElementById('btnSaveConfig');
+    if (btnSave) {
+      btnSave.onclick = async () => {
+        const newCfg = {
+          default_theme_light: root.getElementById('selDefLight')?.value,
+          default_theme_dark: root.getElementById('selDefDark')?.value,
+          default_theme_mobile_light: root.getElementById('selDefMobLight')?.value,
+          default_theme_mobile_dark: root.getElementById('selDefMobDark')?.value,
+          transition_enabled: root.getElementById('chkTransition')?.checked !== false,
+          transition_duration: parseInt(root.getElementById('numTransitionDuration')?.value, 10) || 800,
+          media_subfolder: root.getElementById('txtMediaSubfolder')?.value.trim() || 'theme_sounds',
+        };
+        await this._saveConfig(newCfg);
+        this._isDirty = false;
+        const bar = root.getElementById('panelSaveBar');
+        if (bar) bar.style.display = 'none';
+      };
     }
 
     // Rules enable/disable toggle
