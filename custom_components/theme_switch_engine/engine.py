@@ -213,6 +213,81 @@ def check_entity_state_condition(hass: HomeAssistant, cond: dict[str, Any]) -> b
     return str(st.state).lower() == str(expected_state).lower()
 
 
+def check_moon_condition(hass: HomeAssistant, cond: dict[str, Any]) -> bool:
+    """Check moon phase condition."""
+    m_entity = cond.get("entity_id")
+    st = None
+    if m_entity:
+        st = hass.states.get(m_entity)
+    else:
+        for candidate in ("sensor.moon_phase", "sensor.moon"):
+            st = hass.states.get(candidate)
+            if st:
+                break
+        if not st:
+            for eid in hass.states.async_entity_ids("sensor"):
+                if "moon" in eid:
+                    st = hass.states.get(eid)
+                    if st:
+                        break
+
+    if not st:
+        return False
+
+    cur_phase = (st.state or "").strip().lower()
+    allowed_phases = cond.get("phases") or cond.get("phase") or []
+    if isinstance(allowed_phases, str):
+        allowed_phases = [p.strip().lower() for p in allowed_phases.split(",")]
+    else:
+        allowed_phases = [str(p).strip().lower() for p in allowed_phases]
+
+    if not allowed_phases:
+        return True
+
+    return cur_phase in allowed_phases
+
+
+def check_tides_condition(hass: HomeAssistant, cond: dict[str, Any]) -> bool:
+    """Check tides condition (high tide, low tide, rising, falling)."""
+    t_entity = cond.get("entity_id")
+    st = None
+    if t_entity:
+        st = hass.states.get(t_entity)
+    else:
+        for candidate_id in hass.states.async_entity_ids("sensor"):
+            if "tide" in candidate_id or "worldtides" in candidate_id:
+                st = hass.states.get(candidate_id)
+                if st:
+                    break
+
+    if not st:
+        return False
+
+    raw_allowed = cond.get("states") or cond.get("state") or []
+    if isinstance(raw_allowed, str):
+        allowed = [s.strip().lower() for s in raw_allowed.split(",")]
+    else:
+        allowed = [str(s).strip().lower() for s in raw_allowed]
+
+    if not allowed:
+        return True
+
+    cur_state = (st.state or "").strip().lower()
+    if cur_state in allowed:
+        return True
+
+    for attr in ("tide_type", "trend", "phase", "next_tide", "current_tide"):
+        attr_val = str(st.attributes.get(attr, "")).strip().lower()
+        if attr_val and attr_val in allowed:
+            return True
+
+    for item in allowed:
+        if item in cur_state or (cur_state and cur_state in item):
+            return True
+
+    return False
+
+
 def evaluate_rule_conditions(
     hass: HomeAssistant,
     rule: dict[str, Any],
@@ -259,6 +334,14 @@ def evaluate_rule_conditions(
             match = check_entity_state_condition(hass, cond)
             if match:
                 matched_names.append(f"entity({cond.get('entity_id')}={cond.get('state')})")
+        elif ctype == "moon":
+            match = check_moon_condition(hass, cond)
+            if match:
+                matched_names.append(f"moon({cond.get('phases') or cond.get('phase')})")
+        elif ctype == "tides":
+            match = check_tides_condition(hass, cond)
+            if match:
+                matched_names.append(f"tides({cond.get('states') or cond.get('state')})")
         else:
             _LOGGER.warning("Unknown condition type '%s' in rule '%s'", ctype, rule.get("name"))
             continue

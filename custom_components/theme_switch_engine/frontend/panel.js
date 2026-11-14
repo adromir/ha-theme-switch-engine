@@ -69,6 +69,28 @@ const TRANSLATIONS = {
     cond_season: 'Meteorological Season',
     cond_sun: 'Sun Position & Elevation',
     cond_entity_state: 'Any Entity State',
+    cond_moon: 'Moon Phase',
+    cond_tides: 'Tides (Ebb & Flow)',
+    moon_entity_label: 'Moon Entity',
+    moon_default_entity: 'Standard Moon Entity (sensor.moon)',
+    moon_phase_label: 'Moon Phase',
+    moon_new_moon: 'New Moon',
+    moon_waxing_crescent: 'Waxing Crescent',
+    moon_first_quarter: 'First Quarter',
+    moon_waxing_gibbous: 'Waxing Gibbous',
+    moon_full_moon: 'Full Moon',
+    moon_waning_gibbous: 'Waning Gibbous',
+    moon_last_quarter: 'Last Quarter',
+    moon_waning_crescent: 'Waning Crescent',
+    tides_entity_label: 'Tides Entity',
+    tides_default_entity: 'Standard Tides Entity',
+    tides_state_label: 'Tidal State',
+    tides_high_tide: 'High Tide',
+    tides_low_tide: 'Low Tide',
+    tides_rising: 'Rising (Incoming)',
+    tides_falling: 'Falling (Outgoing)',
+    cond_prefix_moon: 'Moon',
+    cond_prefix_tides: 'Tides',
     weather_entity_label: 'Weather Entity',
     weather_global_default: 'Global Default Weather Entity',
     weather_states_label: 'Weather Conditions (select one or more)',
@@ -224,6 +246,28 @@ const TRANSLATIONS = {
     cond_season: 'Jahreszeit',
     cond_sun: 'Sonnenstand & Elevation',
     cond_entity_state: 'Beliebiger Entitätszustand',
+    cond_moon: 'Mondphase',
+    cond_tides: 'Ebbe & Flut (Gezeiten)',
+    moon_entity_label: 'Mond-Entität',
+    moon_default_entity: 'Standard-Mond-Entität (sensor.moon)',
+    moon_phase_label: 'Mondphase',
+    moon_new_moon: 'Neumond',
+    moon_waxing_crescent: 'Zunehmende Sichel',
+    moon_first_quarter: 'Erstes Viertel',
+    moon_waxing_gibbous: 'Zunehmender Mond',
+    moon_full_moon: 'Vollmond',
+    moon_waning_gibbous: 'Abnehmender Mond',
+    moon_last_quarter: 'Letztes Viertel',
+    moon_waning_crescent: 'Abnehmende Sichel',
+    tides_entity_label: 'Gezeiten-Entität',
+    tides_default_entity: 'Standard-Gezeiten-Entität',
+    tides_state_label: 'Gezeitenzustand',
+    tides_high_tide: 'Flut (Hochwasser)',
+    tides_low_tide: 'Ebbe (Niedrigwasser)',
+    tides_rising: 'Steigend (Auflaufend)',
+    tides_falling: 'Fallend (Ablaufend)',
+    cond_prefix_moon: 'Mond',
+    cond_prefix_tides: 'Gezeiten',
     weather_entity_label: 'Wetter-Entität',
     weather_global_default: 'Globale Standard-Wetter-Entität',
     weather_states_label: 'Wetterzustände (einen oder mehrere wählen)',
@@ -379,6 +423,28 @@ const TRANSLATIONS = {
     cond_season: 'Musim Meteorologis',
     cond_sun: 'Posisi & Elevasi Matahari',
     cond_entity_state: 'Status Entitas Apa Saja',
+    cond_moon: 'Fase Bulan',
+    cond_tides: 'Pasang Surut',
+    moon_entity_label: 'Entitas Bulan',
+    moon_default_entity: 'Entitas Bulan Standar',
+    moon_phase_label: 'Fase Bulan',
+    moon_new_moon: 'Bulan Baru',
+    moon_waxing_crescent: 'Bulan Sabit Awal',
+    moon_first_quarter: 'Kuartal Pertama',
+    moon_waxing_gibbous: 'Bulan Cembung Awal',
+    moon_full_moon: 'Bulan Purnama',
+    moon_waning_gibbous: 'Bulan Cembung Akhir',
+    moon_last_quarter: 'Kuartal Akhir',
+    moon_waning_crescent: 'Bulan Sabit Akhir',
+    tides_entity_label: 'Entitas Pasang Surut',
+    tides_default_entity: 'Entitas Pasang Surut Standar',
+    tides_state_label: 'Status Pasang Surut',
+    tides_high_tide: 'Pasang',
+    tides_low_tide: 'Surut',
+    tides_rising: 'Naik',
+    tides_falling: 'Turun',
+    cond_prefix_moon: 'Bulan',
+    cond_prefix_tides: 'Pasang Surut',
     weather_entity_label: 'Entitas Cuaca',
     weather_global_default: 'Entitas Cuaca Default Global',
     weather_states_label: 'Kondisi Cuaca (pilih satu atau lebih)',
@@ -497,6 +563,24 @@ const WEATHER_KEY_MAP = {
 };
 
 const WEEKDAY_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun', 'workday', 'weekend'];
+
+const MOON_PHASES = [
+  'new_moon',
+  'waxing_crescent',
+  'first_quarter',
+  'waxing_gibbous',
+  'full_moon',
+  'waning_gibbous',
+  'last_quarter',
+  'waning_crescent',
+];
+
+const TIDE_STATES = [
+  'high_tide',
+  'low_tide',
+  'rising',
+  'falling',
+];
 
 const DOMAIN_DEFAULT_STATES = {
   light: ['on', 'off'],
@@ -782,6 +866,8 @@ class ThemeSwitchEnginePanel extends HTMLElement {
     if (type === 'weekday') return { type: 'weekday', days: ['sat', 'sun'] };
     if (type === 'season') return { type: 'season', season: 'winter' };
     if (type === 'sun') return { type: 'sun', state: 'below_horizon' };
+    if (type === 'moon') return { type: 'moon', phases: ['full_moon'] };
+    if (type === 'tides') return { type: 'tides', states: ['high_tide'] };
     if (type === 'entity_state') {
       const firstEid = Object.keys(this._hass?.states || {})[0] || '';
       const candidates = this._getEntityCandidateStates(firstEid);
@@ -815,6 +901,16 @@ class ThemeSwitchEnginePanel extends HTMLElement {
     }
     if (c.type === 'entity_state') {
       return `${this._t('cond_prefix_entity')}: ${c.entity_id || ''} = ${c.state ?? ''}`;
+    }
+    if (c.type === 'moon') {
+      const ph = Array.isArray(c.phases) ? c.phases[0] : (c.phases || c.phase || 'full_moon');
+      const label = this._t('moon_' + ph) || ph;
+      return `${this._t('cond_prefix_moon')}: ${label}`;
+    }
+    if (c.type === 'tides') {
+      const st = Array.isArray(c.states) ? c.states[0] : (c.states || c.state || 'high_tide');
+      const label = this._t('tides_' + st) || st;
+      return `${this._t('cond_prefix_tides')}: ${label}`;
     }
     return c.type;
   }
@@ -984,6 +1080,60 @@ class ThemeSwitchEnginePanel extends HTMLElement {
         <div class="sub-field-group cond-entity-custom-wrap" data-cidx="${idx}" style="display:${selectVal === '__custom__' ? 'block' : 'none'};">
           <label class="field-label">${this._t('entity_custom_state_label')}</label>
           <input type="text" class="cond-entity-custom-input" data-cidx="${idx}" value="${this._escapeHtml(curState)}" placeholder="e.g. active, home, playing">
+        </div>
+      `;
+    }
+
+    if (cond.type === 'moon') {
+      const moonEntities = Object.keys(allStates).filter(eid => eid.includes('moon')).sort();
+      const selectedPhase = Array.isArray(cond.phases) ? cond.phases[0] : (cond.phases || cond.phase || 'full_moon');
+
+      return `
+        <div class="sub-field-group">
+          <label class="field-label">${this._t('moon_entity_label')}</label>
+          <select class="cond-moon-entity" data-cidx="${idx}">
+            <option value="" ${!cond.entity_id ? 'selected' : ''}>${this._t('moon_default_entity')}</option>
+            ${moonEntities.map(eid => {
+              const name = allStates[eid]?.attributes?.friendly_name || eid;
+              return `<option value="${this._escapeHtml(eid)}" ${cond.entity_id === eid ? 'selected' : ''}>${this._escapeHtml(name)} (${this._escapeHtml(eid)})</option>`;
+            }).join('')}
+          </select>
+        </div>
+        <div class="sub-field-group">
+          <label class="field-label">${this._t('moon_phase_label')}</label>
+          <select class="cond-moon-phase" data-cidx="${idx}">
+            ${MOON_PHASES.map(ph => {
+              const label = this._t('moon_' + ph) || ph;
+              return `<option value="${ph}" ${selectedPhase === ph ? 'selected' : ''}>${this._escapeHtml(label)} (${ph})</option>`;
+            }).join('')}
+          </select>
+        </div>
+      `;
+    }
+
+    if (cond.type === 'tides') {
+      const tideEntities = Object.keys(allStates).filter(eid => eid.includes('tide') || eid.includes('worldtides')).sort();
+      const selectedState = Array.isArray(cond.states) ? cond.states[0] : (cond.states || cond.state || 'high_tide');
+
+      return `
+        <div class="sub-field-group">
+          <label class="field-label">${this._t('tides_entity_label')}</label>
+          <select class="cond-tides-entity" data-cidx="${idx}">
+            <option value="" ${!cond.entity_id ? 'selected' : ''}>${this._t('tides_default_entity')}</option>
+            ${tideEntities.map(eid => {
+              const name = allStates[eid]?.attributes?.friendly_name || eid;
+              return `<option value="${this._escapeHtml(eid)}" ${cond.entity_id === eid ? 'selected' : ''}>${this._escapeHtml(name)} (${this._escapeHtml(eid)})</option>`;
+            }).join('')}
+          </select>
+        </div>
+        <div class="sub-field-group">
+          <label class="field-label">${this._t('tides_state_label')}</label>
+          <select class="cond-tides-state" data-cidx="${idx}">
+            ${TIDE_STATES.map(ts => {
+              const label = this._t('tides_' + ts) || ts;
+              return `<option value="${ts}" ${selectedState === ts ? 'selected' : ''}>${this._escapeHtml(label)}</option>`;
+            }).join('')}
+          </select>
         </div>
       `;
     }
@@ -1465,6 +1615,12 @@ class ThemeSwitchEnginePanel extends HTMLElement {
                     <option value="weekday" ${cond.type === 'weekday' ? 'selected' : ''}>${this._t('cond_weekday')}</option>
                     <option value="season" ${cond.type === 'season' ? 'selected' : ''}>${this._t('cond_season')}</option>
                     <option value="sun" ${cond.type === 'sun' ? 'selected' : ''}>${this._t('cond_sun')}</option>
+                    ${(this._data?.capabilities?.has_moon || cond.type === 'moon') ? `
+                      <option value="moon" ${cond.type === 'moon' ? 'selected' : ''}>${this._t('cond_moon')}</option>
+                    ` : ''}
+                    ${(this._data?.capabilities?.has_tides || cond.type === 'tides') ? `
+                      <option value="tides" ${cond.type === 'tides' ? 'selected' : ''}>${this._t('cond_tides')}</option>
+                    ` : ''}
                     <option value="entity_state" ${cond.type === 'entity_state' ? 'selected' : ''}>${this._t('cond_entity_state')}</option>
                   </select>
                   ${this._draftRule.conditions.length > 1 ? `
@@ -1867,6 +2023,36 @@ class ThemeSwitchEnginePanel extends HTMLElement {
         inp.oninput = () => {
           const cIdx = parseInt(inp.getAttribute('data-cidx'), 10);
           this._draftRule.conditions[cIdx].state = inp.value.trim();
+        };
+      });
+
+      // Moon controls
+      root.querySelectorAll('.cond-moon-entity').forEach(sel => {
+        sel.onchange = () => {
+          const cIdx = parseInt(sel.getAttribute('data-cidx'), 10);
+          if (sel.value) this._draftRule.conditions[cIdx].entity_id = sel.value;
+          else delete this._draftRule.conditions[cIdx].entity_id;
+        };
+      });
+      root.querySelectorAll('.cond-moon-phase').forEach(sel => {
+        sel.onchange = () => {
+          const cIdx = parseInt(sel.getAttribute('data-cidx'), 10);
+          this._draftRule.conditions[cIdx].phases = [sel.value];
+        };
+      });
+
+      // Tides controls
+      root.querySelectorAll('.cond-tides-entity').forEach(sel => {
+        sel.onchange = () => {
+          const cIdx = parseInt(sel.getAttribute('data-cidx'), 10);
+          if (sel.value) this._draftRule.conditions[cIdx].entity_id = sel.value;
+          else delete this._draftRule.conditions[cIdx].entity_id;
+        };
+      });
+      root.querySelectorAll('.cond-tides-state').forEach(sel => {
+        sel.onchange = () => {
+          const cIdx = parseInt(sel.getAttribute('data-cidx'), 10);
+          this._draftRule.conditions[cIdx].states = [sel.value];
         };
       });
 

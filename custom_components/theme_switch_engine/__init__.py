@@ -215,6 +215,20 @@ def ws_rules_get(
         "elevation": sun_st.attributes.get("elevation", 0) if sun_st else 0,
     }
 
+    has_moon = (
+        "moon" in hass.config.components
+        or bool(hass.states.get("sensor.moon"))
+        or bool(hass.states.get("sensor.moon_phase"))
+    )
+    has_tides = (
+        "worldtidesinfo" in hass.config.components
+        or any("tide" in eid or "worldtides" in eid for eid in hass.states.async_entity_ids("sensor"))
+    )
+    capabilities = {
+        "has_moon": has_moon,
+        "has_tides": has_tides,
+    }
+
     connection.send_result(
         msg["id"],
         {
@@ -235,6 +249,7 @@ def ws_rules_get(
             "sun": sun_info,
             "themes": get_available_themes(hass),
             "modes": MODES,
+            "capabilities": capabilities,
             "effect": coordinator.active_effect,
             "effect_mode": coordinator.active_effect_mode,
             "effect_cycles": coordinator.active_effect_cycles,

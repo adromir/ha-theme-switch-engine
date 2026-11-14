@@ -100,8 +100,10 @@ _install_ha_stubs()
 from custom_components.theme_switch_engine.engine import (
     check_date_range_condition,
     check_entity_state_condition,
+    check_moon_condition,
     check_season_condition,
     check_sun_condition,
+    check_tides_condition,
     check_time_condition,
     check_weekday_condition,
     check_weather_condition,
@@ -287,6 +289,28 @@ class TestThemeSwitchEngine(unittest.TestCase):
         self.assertEqual(rule.get("sound_mode"), "loop_count")
         self.assertEqual(rule.get("sound_loops"), 4)
         self.assertEqual(rule.get("sound_volume"), 65)
+
+    def test_moon_condition(self):
+        hass = MagicMock()
+        moon_state = MagicMock()
+        moon_state.state = "full_moon"
+        hass.states.get.side_effect = lambda eid: moon_state if eid in ("sensor.moon_phase", "sensor.moon") else None
+
+        self.assertTrue(check_moon_condition(hass, {"phases": ["full_moon"]}))
+        self.assertTrue(check_moon_condition(hass, {"phase": "full_moon"}))
+        self.assertFalse(check_moon_condition(hass, {"phases": ["new_moon"]}))
+
+    def test_tides_condition(self):
+        hass = MagicMock()
+        tide_state = MagicMock()
+        tide_state.state = "high_tide"
+        tide_state.attributes = {"tide_type": "High Tide"}
+        hass.states.async_entity_ids.return_value = ["sensor.worldtidesinfo_tide"]
+        hass.states.get.side_effect = lambda eid: tide_state if "tide" in eid else None
+
+        self.assertTrue(check_tides_condition(hass, {"states": ["high_tide"]}))
+        self.assertTrue(check_tides_condition(hass, {"state": "high tide"}))
+        self.assertFalse(check_tides_condition(hass, {"states": ["low_tide"]}))
 
 
 if __name__ == "__main__":

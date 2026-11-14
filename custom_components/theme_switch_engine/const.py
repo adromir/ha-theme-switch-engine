@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 DOMAIN = "theme_switch_engine"
-VERSION = "1.4.1"
+VERSION = "1.4.2"
 
 STORAGE_KEY = "theme_switch_engine.config"
 STORAGE_VERSION = 1
@@ -71,6 +71,8 @@ COND_WEEKDAY = "weekday"
 COND_SEASON = "season"
 COND_WEATHER = "weather"
 COND_ENTITY_STATE = "entity_state"
+COND_MOON = "moon"
+COND_TIDES = "tides"
 
 CONDITION_TYPES = [
     COND_SUN,
@@ -80,5 +82,25 @@ CONDITION_TYPES = [
     COND_SEASON,
     COND_WEATHER,
     COND_ENTITY_STATE,
+    COND_MOON,
+    COND_TIDES,
+]
+
+MOON_PHASES = [
+    "new_moon",
+    "waxing_crescent",
+    "first_quarter",
+    "waxing_gibbous",
+    "full_moon",
+    "waning_gibbous",
+    "last_quarter",
+    "waning_crescent",
+]
+
+TIDE_STATES = [
+    "high_tide",
+    "low_tide",
+    "rising",
+    "falling",
 ]
 
