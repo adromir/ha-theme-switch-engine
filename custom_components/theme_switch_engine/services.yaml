@@ -24,6 +24,9 @@ set_mode:
             - "Auto (Engine)"
             - "Force Light"
             - "Force Dark"
+            - "Home Assistant Default"
+            - "Home Assistant Default (Light)"
+            - "Home Assistant Default (Dark)"
             - "Paused"
 
 preview_theme:

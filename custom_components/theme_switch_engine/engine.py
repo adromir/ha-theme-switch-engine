@@ -351,3 +351,46 @@ def evaluate_rule_conditions(
 
     return True, matched_names
 
+
+def parse_theme_mode(theme_str: str | None, default_variant: str = "light") -> tuple[str, str]:
+    """Parse a theme identifier, extracting clean theme name and forced variant.
+
+    Examples:
+        'default:light' -> ('default', 'light')
+        'default_light' -> ('default', 'light')
+        'default:dark'  -> ('default', 'dark')
+        'default_dark'  -> ('default', 'dark')
+        'default'       -> ('default', default_variant)
+        'Vision Glass Light' -> ('Vision Glass Light', 'light')
+        'Vision Glass Dark'  -> ('Vision Glass Dark', 'dark')
+        'Custom'             -> ('Custom', default_variant)
+    """
+    if not theme_str:
+        return "default", default_variant
+
+    val = str(theme_str).strip()
+    val_lower = val.lower()
+
+    if val_lower in ("default:light", "default_light", "default (light)"):
+        return "default", "light"
+    if val_lower in ("default:dark", "default_dark", "default (dark)"):
+        return "default", "dark"
+    if val_lower in ("default", "default:auto", "home assistant default", "home assistant"):
+        return "default", default_variant
+
+    if ":" in val:
+        base, suffix = val.rsplit(":", 1)
+        suffix_lower = suffix.strip().lower()
+        if suffix_lower in ("light", "hell"):
+            return base.strip(), "light"
+        if suffix_lower in ("dark", "dunkel"):
+            return base.strip(), "dark"
+
+    if "light" in val_lower or "hell" in val_lower:
+        return val, "light"
+    if "dark" in val_lower or "dunkel" in val_lower:
+        return val, "dark"
+
+    return val, default_variant
+
+

@@ -1,5 +1,5 @@
 /**
- * Theme Switch Engine: Universal Client Helper (v1.4.0)
+ * Theme Switch Engine: Universal Client Helper (v1.5.0)
  * - Real-time theme synchronization across all HA pages & dashboards
  * - Fullscreen Canvas Effects Engine (Snow, Rain, Aurora, Fog, Fireworks, Falling Leaves, Custom JS)
  * - Sound Engine with Media folder integration & autoplay resilience
@@ -34,14 +34,22 @@
   }
 
   function resolveDesiredDark(targetTheme, attrs) {
-    const lower = String(targetTheme || '').toLowerCase();
+    const raw = String(targetTheme || '').trim();
+    const lower = raw.toLowerCase();
+
+    // Explicit forced variants for default or custom theme
+    if (lower === 'default:light' || lower === 'default_light' || lower === 'default (light)') return false;
+    if (lower === 'default:dark' || lower === 'default_dark' || lower === 'default (dark)') return true;
+    if (lower.endsWith(':light') || lower.endsWith(':hell')) return false;
+    if (lower.endsWith(':dark') || lower.endsWith(':dunkel')) return true;
+
     if (lower === 'default' || lower === 'home assistant') {
-      const v = String(attrs?.variant || attrs?.day_night_variant || '').toLowerCase();
-      if (v === 'light') return false;
-      if (v === 'dark') return true;
       const mode = String(attrs?.mode || '').toLowerCase();
-      if (mode === 'force light' || mode === 'force day') return false;
-      if (mode === 'force dark' || mode === 'force night') return true;
+      if (mode.includes('force light') || mode.includes('force day') || mode.includes('default (light)')) return false;
+      if (mode.includes('force dark') || mode.includes('force night') || mode.includes('default (dark)')) return true;
+      const v = String(attrs?.variant || attrs?.day_night_variant || '').toLowerCase();
+      if (v === 'light' || v === 'day') return false;
+      if (v === 'dark' || v === 'night') return true;
       return undefined;
     }
     if (lower.includes('light') || lower.includes('hell')) return false;
@@ -687,11 +695,18 @@
     const isMobile = isMobileClient();
     const attrs = stateObj.attributes || {};
 
-    const targetTheme = (isMobile && attrs.theme_mobile)
+    const rawTheme = (isMobile && attrs.theme_mobile)
       ? attrs.theme_mobile
       : (attrs.theme_desktop || stateObj.state);
 
-    if (!targetTheme || targetTheme === 'unknown' || targetTheme === 'unavailable') return;
+    if (!rawTheme || rawTheme === 'unknown' || rawTheme === 'unavailable') return;
+
+    let targetTheme = rawTheme;
+    if (targetTheme.startsWith('default') || targetTheme.startsWith('home assistant')) {
+      targetTheme = 'default';
+    } else if (targetTheme.includes(':')) {
+      targetTheme = targetTheme.split(':')[0].trim();
+    }
 
     // Apply live transition cross-fade if enabled
     if (attrs.transition_enabled !== false) {
@@ -700,7 +715,7 @@
       applyTransitionStyle(0);
     }
 
-    const desiredDark = resolveDesiredDark(targetTheme, attrs);
+    const desiredDark = resolveDesiredDark(rawTheme, attrs);
 
     // Apply Canvas Visual Effect & Audio Sound
     const effect = attrs.effect;

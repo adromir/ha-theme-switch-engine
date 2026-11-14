@@ -109,6 +109,7 @@ from custom_components.theme_switch_engine.engine import (
     check_weather_condition,
     evaluate_rule_conditions,
     is_daytime,
+    parse_theme_mode,
 )
 
 
@@ -311,6 +312,29 @@ class TestThemeSwitchEngine(unittest.TestCase):
         self.assertTrue(check_tides_condition(hass, {"states": ["high_tide"]}))
         self.assertTrue(check_tides_condition(hass, {"state": "high tide"}))
         self.assertFalse(check_tides_condition(hass, {"states": ["low_tide"]}))
+
+    def test_parse_theme_mode(self):
+        # Default with auto fallback
+        self.assertEqual(parse_theme_mode("default", "light"), ("default", "light"))
+        self.assertEqual(parse_theme_mode("default", "dark"), ("default", "dark"))
+        self.assertEqual(parse_theme_mode("default:auto", "dark"), ("default", "dark"))
+
+        # Forced default modes
+        self.assertEqual(parse_theme_mode("default:light", "dark"), ("default", "light"))
+        self.assertEqual(parse_theme_mode("default_light", "dark"), ("default", "light"))
+        self.assertEqual(parse_theme_mode("default (light)", "dark"), ("default", "light"))
+        self.assertEqual(parse_theme_mode("default:dark", "light"), ("default", "dark"))
+        self.assertEqual(parse_theme_mode("default_dark", "light"), ("default", "dark"))
+        self.assertEqual(parse_theme_mode("default (dark)", "light"), ("default", "dark"))
+
+        # Custom themes
+        self.assertEqual(parse_theme_mode("Vision Glass Light", "dark"), ("Vision Glass Light", "light"))
+        self.assertEqual(parse_theme_mode("Vision Glass Dark", "light"), ("Vision Glass Dark", "dark"))
+        self.assertEqual(parse_theme_mode("MyTheme:light", "dark"), ("MyTheme", "light"))
+        self.assertEqual(parse_theme_mode("MyTheme:dark", "light"), ("MyTheme", "dark"))
+        self.assertEqual(parse_theme_mode("NeutralTheme", "light"), ("NeutralTheme", "light"))
+        self.assertEqual(parse_theme_mode("NeutralTheme", "dark"), ("NeutralTheme", "dark"))
+
 
 
 if __name__ == "__main__":

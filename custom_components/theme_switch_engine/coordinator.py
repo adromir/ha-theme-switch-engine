@@ -42,6 +42,9 @@ from .const import (
     DOMAIN,
     MODE_AUTO,
     MODE_DEFAULT,
+    MODE_DEFAULT_AUTO,
+    MODE_DEFAULT_DARK,
+    MODE_DEFAULT_LIGHT,
     MODE_FORCE_DARK,
     MODE_FORCE_DAY,
     MODE_FORCE_LIGHT,
@@ -51,7 +54,7 @@ from .const import (
     STORAGE_KEY,
     STORAGE_VERSION,
 )
-from .engine import evaluate_rule_conditions, is_daytime
+from .engine import evaluate_rule_conditions, is_daytime, parse_theme_mode
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -317,14 +320,29 @@ class ThemeSwitchCoordinator:
 
         self.preview_active = True
         prev_theme = self.active_theme
-        await self._async_apply_theme_to_frontend(theme_name)
+        prev_variant = self.day_night_variant
+        clean_theme, preview_variant = parse_theme_mode(theme_name, self.day_night_variant)
+        await self._async_apply_theme_to_frontend(clean_theme)
+
+        # Broadcast live preview event to notify frontend immediately
+        self.hass.bus.async_fire(
+            "theme_switch_engine_updated",
+            {
+                "active_theme": clean_theme,
+                "active_theme_desktop": clean_theme,
+                "active_theme_mobile": clean_theme,
+                "variant": preview_variant,
+                "day_night_variant": preview_variant,
+                "preview_active": True,
+            },
+        )
 
         async def _revert_after() -> None:
             await asyncio.sleep(duration_seconds)
             self.preview_active = False
             if prev_theme:
                 await self._async_apply_theme_to_frontend(prev_theme)
-            await self.async_evaluate()
+            await self.async_evaluate(force=True)
 
         self._preview_task = self.hass.async_create_task(_revert_after())
 
@@ -357,24 +375,37 @@ class ThemeSwitchCoordinator:
             return
 
         if self.mode in (MODE_FORCE_LIGHT, MODE_FORCE_DAY):
-            target_theme_desktop = self.default_theme_light
-            target_theme_mobile = self.default_theme_mobile_light
+            target_theme_desktop, _ = parse_theme_mode(self.default_theme_light, "light")
+            target_theme_mobile, _ = parse_theme_mode(self.default_theme_mobile_light, "light")
             target_rule_name = "Force Light"
             target_variant = "light"
             matched_conds = ["mode=force_light"]
         elif self.mode in (MODE_FORCE_DARK, MODE_FORCE_NIGHT):
-            target_theme_desktop = self.default_theme_dark
-            target_theme_mobile = self.default_theme_mobile_dark
+            target_theme_desktop, _ = parse_theme_mode(self.default_theme_dark, "dark")
+            target_theme_mobile, _ = parse_theme_mode(self.default_theme_mobile_dark, "dark")
             target_rule_name = "Force Dark"
             target_variant = "dark"
             matched_conds = ["mode=force_dark"]
-        elif self.mode == MODE_DEFAULT:
+        elif self.mode in (MODE_DEFAULT, MODE_DEFAULT_AUTO):
             target_theme_desktop = "default"
             target_theme_mobile = "default"
             target_rule_name = "Home Assistant Default"
             target_variant = "light" if day else "dark"
             matched_conds = ["mode=default"]
+        elif self.mode == MODE_DEFAULT_LIGHT:
+            target_theme_desktop = "default"
+            target_theme_mobile = "default"
+            target_rule_name = "Home Assistant Default (Light)"
+            target_variant = "light"
+            matched_conds = ["mode=default_light"]
+        elif self.mode == MODE_DEFAULT_DARK:
+            target_theme_desktop = "default"
+            target_theme_mobile = "default"
+            target_rule_name = "Home Assistant Default (Dark)"
+            target_variant = "dark"
+            matched_conds = ["mode=default_dark"]
         else:
+            default_variant = "light" if day else "dark"
             # MODE_AUTO: Evaluate rules top-down by priority
             for rule in self.rules:
                 if not rule.get("enabled", True):
@@ -426,31 +457,32 @@ class ThemeSwitchCoordinator:
                     theme_mobile_static = rule.get("theme_mobile")
 
                     # Desktop theme resolution
-                    if theme_light and theme_dark:
-                        target_theme_desktop = theme_light if day else theme_dark
-                        target_variant = "light" if day else "dark"
+                    if theme_light and theme_dark and theme_light != theme_dark:
+                        selected_desk = theme_light if day else theme_dark
                     elif theme_static:
-                        target_theme_desktop = theme_static
-                        target_variant = "static"
+                        selected_desk = theme_static
                     elif theme_light:
-                        target_theme_desktop = theme_light
-                        target_variant = "light"
+                        selected_desk = theme_light
                     elif theme_dark:
-                        target_theme_desktop = theme_dark
-                        target_variant = "dark"
+                        selected_desk = theme_dark
+                    else:
+                        selected_desk = "default"
+
+                    target_theme_desktop, target_variant = parse_theme_mode(selected_desk, default_variant)
 
                     # Mobile theme resolution
-                    if theme_mobile_light and theme_mobile_dark:
-                        target_theme_mobile = theme_mobile_light if day else theme_mobile_dark
+                    if theme_mobile_light and theme_mobile_dark and theme_mobile_light != theme_mobile_dark:
+                        selected_mob = theme_mobile_light if day else theme_mobile_dark
                     elif theme_mobile_static:
-                        target_theme_mobile = theme_mobile_static
+                        selected_mob = theme_mobile_static
                     elif theme_mobile_light:
-                        target_theme_mobile = theme_mobile_light
+                        selected_mob = theme_mobile_light
                     elif theme_mobile_dark:
-                        target_theme_mobile = theme_mobile_dark
+                        selected_mob = theme_mobile_dark
                     else:
-                        target_theme_mobile = target_theme_desktop
+                        selected_mob = selected_desk
 
+                    target_theme_mobile, _ = parse_theme_mode(selected_mob, target_variant)
                     break
 
             # Fallback if no rule matched
@@ -458,16 +490,22 @@ class ThemeSwitchCoordinator:
                 target_rule_id = "default_fallback"
                 target_rule_name = "Default Fallback"
                 target_priority = 0
-                target_theme_desktop = self.default_theme_light if day else self.default_theme_dark
-                target_theme_mobile = self.default_theme_mobile_light if day else self.default_theme_mobile_dark
-                target_variant = "light" if day else "dark"
+                default_variant = "light" if day else "dark"
+                fallback_desk = self.default_theme_light if day else self.default_theme_dark
+                fallback_mob = self.default_theme_mobile_light if day else self.default_theme_mobile_dark
+                target_theme_desktop, target_variant = parse_theme_mode(fallback_desk, default_variant)
+                target_theme_mobile, _ = parse_theme_mode(fallback_mob, target_variant)
                 matched_conds = ["fallback"]
 
         if not target_theme_mobile:
             target_theme_mobile = target_theme_desktop
 
-        # Check if theme actually changed
-        theme_changed = (target_theme_desktop != self.active_theme_desktop) or (target_theme_mobile != self.active_theme_mobile)
+        # Check if theme or variant actually changed
+        theme_changed = (
+            (target_theme_desktop != self.active_theme_desktop)
+            or (target_theme_mobile != self.active_theme_mobile)
+            or (target_variant != self.day_night_variant)
+        )
 
         self.active_theme = target_theme_desktop
         self.active_theme_desktop = target_theme_desktop
@@ -530,16 +568,18 @@ class ThemeSwitchCoordinator:
             _LOGGER.warning("Service frontend.set_theme is not available.")
             return
 
+        clean_theme = "default" if str(theme_name).startswith("default") else theme_name
+
         for mode_slot in ("light", "dark"):
             try:
                 await self.hass.services.async_call(
                     "frontend",
                     "set_theme",
-                    {"name": theme_name, "mode": mode_slot},
+                    {"name": clean_theme, "mode": mode_slot},
                     blocking=True,
                 )
             except Exception as err:  # noqa: BLE001
-                _LOGGER.error("Failed to set theme '%s' (mode=%s): %s", theme_name, mode_slot, err)
+                _LOGGER.error("Failed to set theme '%s' (mode=%s): %s", clean_theme, mode_slot, err)
 
     def register_listener(self, listener: Callable[[], None]) -> CALLBACK_TYPE:
         """Register a callback for coordinator updates."""

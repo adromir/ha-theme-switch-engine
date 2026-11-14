@@ -130,8 +130,13 @@ const TRANSLATIONS = {
     mode_auto: 'Automatic (Engine)',
     mode_force_light: 'Force Light',
     mode_force_dark: 'Force Dark',
-    mode_default: 'Home Assistant Default',
+    mode_default: 'Home Assistant Default (Auto)',
+    mode_default_light: 'Home Assistant Default (Light)',
+    mode_default_dark: 'Home Assistant Default (Dark)',
     mode_paused: 'Paused',
+    theme_default_auto: 'Home Assistant Default (Auto)',
+    theme_default_light: 'Home Assistant Default (Light)',
+    theme_default_dark: 'Home Assistant Default (Dark)',
     effects_and_sound: 'Visual Effects & Sound (Optional)',
     effect_label: 'Screen Effect',
     effect_none: 'None',
@@ -310,8 +315,13 @@ const TRANSLATIONS = {
     mode_auto: 'Automatisch (Engine)',
     mode_force_light: 'Light erzwingen',
     mode_force_dark: 'Dark erzwingen',
-    mode_default: 'Home Assistant Standard',
+    mode_default: 'Home Assistant Standard (Automatisch)',
+    mode_default_light: 'Home Assistant Standard (Hell)',
+    mode_default_dark: 'Home Assistant Standard (Dunkel)',
     mode_paused: 'Pausiert',
+    theme_default_auto: 'Home Assistant Standard (Automatisch)',
+    theme_default_light: 'Home Assistant Standard (Hell)',
+    theme_default_dark: 'Home Assistant Standard (Dunkel)',
     effects_and_sound: 'Visuelle Effekte & Sound (Optional)',
     effect_label: 'Bildschirm-Effekt',
     effect_none: 'Keine',
@@ -490,8 +500,13 @@ const TRANSLATIONS = {
     mode_auto: 'Otomatis (Engine)',
     mode_force_light: 'Paksa Light',
     mode_force_dark: 'Paksa Dark',
-    mode_default: 'Standar Home Assistant',
+    mode_default: 'Home Assistant Default (Otomatis)',
+    mode_default_light: 'Home Assistant Default (Terang)',
+    mode_default_dark: 'Home Assistant Default (Gelap)',
     mode_paused: 'Dijeda',
+    theme_default_auto: 'Home Assistant Default (Otomatis)',
+    theme_default_light: 'Home Assistant Default (Terang)',
+    theme_default_dark: 'Home Assistant Default (Gelap)',
     effects_and_sound: 'Efek Visual & Audio (Opsional)',
     effect_label: 'Efek Layar',
     effect_none: 'Tidak ada',
@@ -659,7 +674,9 @@ class ThemeSwitchEnginePanel extends HTMLElement {
     if (mode === 'Auto (Engine)') return this._t('mode_auto');
     if (mode === 'Force Light' || mode === 'Force Day') return this._t('mode_force_light');
     if (mode === 'Force Dark' || mode === 'Force Night') return this._t('mode_force_dark');
-    if (mode === 'Home Assistant Default') return this._t('mode_default');
+    if (mode === 'Home Assistant Default' || mode === 'Home Assistant Default (Auto)') return this._t('mode_default');
+    if (mode === 'Home Assistant Default (Light)') return this._t('mode_default_light');
+    if (mode === 'Home Assistant Default (Dark)') return this._t('mode_default_dark');
     if (mode === 'Paused') return this._t('mode_paused');
     return mode;
   }
@@ -741,11 +758,31 @@ class ThemeSwitchEnginePanel extends HTMLElement {
 
   _getAllThemes() {
     const d = this._data || {};
-    return Array.from(new Set([
-      'default',
+    const customThemes = Array.from(new Set([
       ...(d.themes || []),
       ...Object.keys(this._hass?.themes?.themes || {}),
-    ])).sort();
+    ])).filter(t => t && !t.startsWith('default')).sort();
+
+    return [
+      'default',
+      'default:light',
+      'default:dark',
+      ...customThemes,
+    ];
+  }
+
+  _getThemeLabel(themeName) {
+    if (!themeName) return '';
+    if (themeName === 'default' || themeName === 'default:auto') {
+      return this._t('theme_default_auto');
+    }
+    if (themeName === 'default:light' || themeName === 'default_light') {
+      return this._t('theme_default_light');
+    }
+    if (themeName === 'default:dark' || themeName === 'default_dark') {
+      return this._t('theme_default_dark');
+    }
+    return themeName;
   }
 
   _getEntityCandidateStates(entityId) {
@@ -1457,12 +1494,12 @@ class ThemeSwitchEnginePanel extends HTMLElement {
         <div class="grid-cards">
           <div class="card">
             <div class="card-label">${this._t('active_desktop_theme')}</div>
-            <div class="card-val">${this._escapeHtml(d.active_theme_desktop || d.active_theme || 'default')}</div>
+            <div class="card-val">${this._escapeHtml(this._getThemeLabel(d.active_theme_desktop || d.active_theme || 'default'))}</div>
             <div class="card-sub">${this._t('rule_prefix')}: ${this._escapeHtml(d.active_rule_name)} (${this._t('prio_short')} ${d.priority})</div>
           </div>
           <div class="card">
             <div class="card-label">${this._t('active_mobile_theme')}</div>
-            <div class="card-val">${this._escapeHtml(d.active_theme_mobile || d.active_theme || 'default')}</div>
+            <div class="card-val">${this._escapeHtml(this._getThemeLabel(d.active_theme_mobile || d.active_theme || 'default'))}</div>
             <div class="card-sub">${isMobile ? this._t('device_is_mobile') : this._t('device_is_desktop')}</div>
           </div>
           <div class="card">
@@ -1484,25 +1521,25 @@ class ThemeSwitchEnginePanel extends HTMLElement {
             <div>
               <label class="field-label">${this._t('desktop_light')}</label>
               <select id="selDefLight" style="width:100%;">
-                ${themes.map(t => `<option value="${this._escapeHtml(t)}" ${t === defLight ? 'selected' : ''}>${this._escapeHtml(t)}</option>`).join('')}
+                ${themes.map(t => `<option value="${this._escapeHtml(t)}" ${t === defLight ? 'selected' : ''}>${this._escapeHtml(this._getThemeLabel(t))}</option>`).join('')}
               </select>
             </div>
             <div>
               <label class="field-label">${this._t('desktop_dark')}</label>
               <select id="selDefDark" style="width:100%;">
-                ${themes.map(t => `<option value="${this._escapeHtml(t)}" ${t === defDark ? 'selected' : ''}>${this._escapeHtml(t)}</option>`).join('')}
+                ${themes.map(t => `<option value="${this._escapeHtml(t)}" ${t === defDark ? 'selected' : ''}>${this._escapeHtml(this._getThemeLabel(t))}</option>`).join('')}
               </select>
             </div>
             <div>
               <label class="field-label">${this._t('mobile_light')}</label>
               <select id="selDefMobLight" style="width:100%;">
-                ${themes.map(t => `<option value="${this._escapeHtml(t)}" ${t === defMobLight ? 'selected' : ''}>${this._escapeHtml(t)}</option>`).join('')}
+                ${themes.map(t => `<option value="${this._escapeHtml(t)}" ${t === defMobLight ? 'selected' : ''}>${this._escapeHtml(this._getThemeLabel(t))}</option>`).join('')}
               </select>
             </div>
             <div>
               <label class="field-label">${this._t('mobile_dark')}</label>
               <select id="selDefMobDark" style="width:100%;">
-                ${themes.map(t => `<option value="${this._escapeHtml(t)}" ${t === defMobDark ? 'selected' : ''}>${this._escapeHtml(t)}</option>`).join('')}
+                ${themes.map(t => `<option value="${this._escapeHtml(t)}" ${t === defMobDark ? 'selected' : ''}>${this._escapeHtml(this._getThemeLabel(t))}</option>`).join('')}
               </select>
             </div>
           </div>
@@ -1536,8 +1573,8 @@ class ThemeSwitchEnginePanel extends HTMLElement {
       const tDark = r.theme_dark || r.theme_night;
       const tMobLight = r.theme_mobile_light || r.theme_mobile_day;
       const tMobDark = r.theme_mobile_dark || r.theme_mobile_night;
-      const deskTheme = r.theme || (tLight || tDark ? `${tLight || '-'} / ${tDark || '-'}` : this._t('standard_theme'));
-      const mobTheme = r.theme_mobile || (tMobLight || tMobDark ? `${tMobLight || '-'} / ${tMobDark || '-'}` : this._t('same_as_desktop'));
+      const deskTheme = r.theme ? this._getThemeLabel(r.theme) : (tLight || tDark ? `${this._getThemeLabel(tLight) || '-'} / ${this._getThemeLabel(tDark) || '-'}` : this._t('standard_theme'));
+      const mobTheme = r.theme_mobile ? this._getThemeLabel(r.theme_mobile) : (tMobLight || tMobDark ? `${this._getThemeLabel(tMobLight) || '-'} / ${this._getThemeLabel(tMobDark) || '-'}` : this._t('same_as_desktop'));
       const fxBadge = (r.effect && r.effect !== 'none') ? `<span title="${this._escapeHtml(r.effect)}" style="margin-left:5px;font-size:12px;">✨</span>` : '';
       const sndBadge = (r.sound_file && r.sound_file !== 'none') ? `<span title="${this._escapeHtml(r.sound_file)}" style="margin-left:3px;font-size:12px;">🔊</span>` : '';
 
@@ -1662,14 +1699,14 @@ class ThemeSwitchEnginePanel extends HTMLElement {
               <div>
                 <label class="field-label">${this._t('theme_desktop')}</label>
                 <select id="mThemeDesktop" style="width:100%;">
-                  ${themes.map(t => `<option value="${this._escapeHtml(t)}" ${t === this._draftRule.theme ? 'selected' : ''}>${this._escapeHtml(t)}</option>`).join('')}
+                  ${themes.map(t => `<option value="${this._escapeHtml(t)}" ${t === this._draftRule.theme ? 'selected' : ''}>${this._escapeHtml(this._getThemeLabel(t))}</option>`).join('')}
                 </select>
               </div>
               <div>
                 <label class="field-label">${this._t('theme_mobile')}</label>
                 <select id="mThemeMobile" style="width:100%;">
                   <option value="" ${!this._draftRule.theme_mobile ? 'selected' : ''}>${this._t('same_as_desktop')}</option>
-                  ${themes.map(t => `<option value="${this._escapeHtml(t)}" ${t === this._draftRule.theme_mobile ? 'selected' : ''}>${this._escapeHtml(t)}</option>`).join('')}
+                  ${themes.map(t => `<option value="${this._escapeHtml(t)}" ${t === this._draftRule.theme_mobile ? 'selected' : ''}>${this._escapeHtml(this._getThemeLabel(t))}</option>`).join('')}
                 </select>
               </div>
             </div>

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 DOMAIN = "theme_switch_engine"
-VERSION = "1.4.3"
+VERSION = "1.5.0"
 
 STORAGE_KEY = "theme_switch_engine.config"
 STORAGE_VERSION = 1
@@ -57,11 +57,22 @@ MODE_AUTO = "Auto (Engine)"
 MODE_FORCE_LIGHT = "Force Light"
 MODE_FORCE_DARK = "Force Dark"
 MODE_DEFAULT = "Home Assistant Default"
+MODE_DEFAULT_AUTO = "Home Assistant Default (Auto)"
+MODE_DEFAULT_LIGHT = "Home Assistant Default (Light)"
+MODE_DEFAULT_DARK = "Home Assistant Default (Dark)"
 MODE_PAUSED = "Paused"
 # Legacy mode aliases
 MODE_FORCE_DAY = "Force Day"
 MODE_FORCE_NIGHT = "Force Night"
-MODES = [MODE_AUTO, MODE_FORCE_LIGHT, MODE_FORCE_DARK, MODE_DEFAULT, MODE_PAUSED]
+MODES = [
+    MODE_AUTO,
+    MODE_FORCE_LIGHT,
+    MODE_FORCE_DARK,
+    MODE_DEFAULT,
+    MODE_DEFAULT_LIGHT,
+    MODE_DEFAULT_DARK,
+    MODE_PAUSED,
+]
 
 # Supported condition types
 COND_SUN = "sun"

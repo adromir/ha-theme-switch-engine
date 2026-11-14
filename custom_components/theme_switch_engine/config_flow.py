@@ -39,20 +39,21 @@ _LOGGER = logging.getLogger(__name__)
 
 def get_available_themes(hass: Any) -> list[str]:
     """Return all themes currently installed in Home Assistant."""
-    themes: list[str] = ["default"]
+    built_in = ["default", "default:light", "default:dark"]
+    custom_themes: list[str] = []
     try:
         frontend_themes = hass.data.get("frontend_themes")
         if frontend_themes and hasattr(frontend_themes, "themes") and isinstance(frontend_themes.themes, dict):
             for t in frontend_themes.themes.keys():
-                if t not in themes:
-                    themes.append(t)
+                if t not in built_in and t not in custom_themes:
+                    custom_themes.append(t)
         elif isinstance(frontend_themes, dict):
             for t in frontend_themes.keys():
-                if t not in themes:
-                    themes.append(t)
+                if t not in built_in and t not in custom_themes:
+                    custom_themes.append(t)
     except Exception:  # noqa: BLE001
         pass
-    return sorted(themes)
+    return built_in + sorted(custom_themes)
 
 
 class ThemeSwitchConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
