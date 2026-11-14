@@ -1,6 +1,7 @@
 # 🔄 Theme Switch Engine for Home Assistant
 
 [![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=adromir&repository=ha-theme-switch-engine&category=integration)
+[![Ko-Fi](https://img.shields.io/badge/Ko--fi-F16061?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/adromir)
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg?style=for-the-badge)](https://github.com/hacs/default)
 [![GitHub Release](https://img.shields.io/github/v/release/adromir/ha-theme-switch-engine?style=for-the-badge&color=blue)](https://github.com/adromir/ha-theme-switch-engine/releases)
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2024.7%2B-18BCF2?style=for-the-badge&logo=home-assistant)](https://www.home-assistant.io/)
@@ -36,6 +37,8 @@ A universal, hierarchical, **rule-based theme switching integration** for Home A
   - Resilient to browser autoplay policies (auto-resumes on first user interaction).
 - 🌦️ **Rich Condition Suite**:
   - **Sun Position**: Above/below horizon, solar elevation thresholds.
+  - **Moon Phases**: Full Moon, New Moon, Waxing/Waning crescent, etc. (seamlessly discovers installed moon sensor).
+  - **Ebb & Flow (Tides)**: Trigger themes based on high tide, low tide, or rising water (auto-detects World Tides integration).
   - **Weather States**: Matches conditions from your weather integration (`rainy`, `snowy`, `cloudy`, `sunny`, etc.) via convenient dropdown selectors.
   - **Time Schedules**: Time windows with automatic midnight crossover support (e.g. `22:00 – 06:00`).
   - **Date & Annual Ranges**: Specific dates or recurring annual ranges (e.g. `12-24` to `12-26` for Christmas, `12-31` to `01-02` for New Year).
