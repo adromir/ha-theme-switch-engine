@@ -243,6 +243,14 @@ class TestThemeSwitchEngine(unittest.TestCase):
         self.assertEqual(theme_desktop_fallback, "Vision Glass")
         self.assertEqual(theme_mobile_fallback, "Vision Glass")
 
+    def test_options_flow_instantiation(self):
+        from custom_components.theme_switch_engine.config_flow import ThemeSwitchOptionsFlow, ThemeSwitchConfigFlow
+        from unittest.mock import MagicMock
+        mock_entry = MagicMock()
+        mock_entry.entry_id = "test_entry"
+        flow = ThemeSwitchConfigFlow.async_get_options_flow(mock_entry)
+        self.assertIsInstance(flow, ThemeSwitchOptionsFlow)
+
     def test_imports_and_light_dark_constants(self):
         import json
         import custom_components.theme_switch_engine.config_flow  # noqa: F401

@@ -1,6 +1,6 @@
 {
   "name": "ha-theme-switch-engine",
-  "version": "1.4.2",
+  "version": "1.5.1",
   "type": "module",
   "description": "Universal, hierarchical rule-based theme switching engine for Home Assistant with sun, weather, date, schedule and transition support",
   "scripts": {

@@ -87,15 +87,11 @@ class ThemeSwitchConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     @callback
     def async_get_options_flow(config_entry: config_entries.ConfigEntry) -> config_entries.OptionsFlow:
         """Get the options flow for this handler."""
-        return ThemeSwitchOptionsFlow(config_entry)
+        return ThemeSwitchOptionsFlow()
 
 
 class ThemeSwitchOptionsFlow(config_entries.OptionsFlow):
     """Handle options for Theme Switch Engine."""
-
-    def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
-        """Initialize options flow."""
-        self.config_entry = config_entry
 
     async def async_step_init(self, user_input: dict[str, Any] | None = None) -> FlowResult:
         """Manage engine settings."""
