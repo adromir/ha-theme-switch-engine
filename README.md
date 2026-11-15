@@ -12,6 +12,17 @@ A universal, hierarchical, **rule-based theme switching integration** for Home A
 
 ---
 
+## 📸 Screenshots
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/adromir/ha-theme-switch-engine/main/Screenshots/theme-switch-engine-panel.png" alt="Theme Switch Engine Management Panel" width="800">
+</p>
+<p align="center">
+  <em>Dedicated management panel: configure hierarchical theme rules, condition triggers, live smooth transitions, fullscreen particle effects, and background soundscapes.</em>
+</p>
+
+---
+
 ## ✨ Key Advantages & Features
 
 - 🎯 **Hierarchical First-Match-Wins Rule Engine**: Prioritize specific temporary events over broad seasons (e.g. Christmas theme with Priority 100 cleanly overrides Winter theme with Priority 50 without conflict).
